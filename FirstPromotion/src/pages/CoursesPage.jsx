@@ -1,5 +1,13 @@
-import React, { useMemo } from "react";
-import { CheckCircle2, Zap, Clock, Users, ArrowRight } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
+import {
+  CheckCircle2,
+  Zap,
+  Clock,
+  Users,
+  ArrowRight,
+  Loader2,
+} from "lucide-react";
 
 /**
  * @typedef {Object} CoursePrice
@@ -19,11 +27,10 @@ import { CheckCircle2, Zap, Clock, Users, ArrowRight } from "lucide-react";
  */
 
 /**
- * Dynamic Course Data
- * In a real app, this would come from an API or a CMS.
- * @type {Course[]}
+ * MOCK SERVER DATA
+ * This acts as the "Database" for our simulation.
  */
-const COURSES_DATA = [
+const MOCK_DB_RESPONSE = [
   {
     id: 1,
     title: "GDS to MTS / Postman",
@@ -58,16 +65,32 @@ const COURSES_DATA = [
   },
 ];
 
-/**
- * CoursesPage Component
- * * A conversion-optimized layout for React 19.
- * * Features:
- * - Dynamic price calculation (Savings %).
- * - "Popular" badge logic for psychological anchoring.
- * - Responsive grid with hover-lift effects.
- * * @component
- */
 const CoursesPage = () => {
+  // 1. State to hold the data coming from the "Backend"
+  const [courses, setCourses] = useState([]);
+  // 2. State to track if we are currently fetching data
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // 3. Simulate a Network Request
+    const fetchCourses = async () => {
+      try {
+        // Wait for 1.5 seconds to mimic server latency
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        // "Response Received" - Update state with the mock data
+        setCourses(MOCK_DB_RESPONSE);
+      } catch (error) {
+        console.error("Failed to fetch courses:", error);
+      } finally {
+        // Stop the loading indicator
+        setIsLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
   return (
     <main className="min-h-screen bg-slate-50">
       {/* Page Header */}
@@ -90,9 +113,14 @@ const CoursesPage = () => {
       {/* Course Grid Section */}
       <section className="max-w-7xl mx-auto px-6 -mt-16 pb-24 relative z-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {COURSES_DATA.map((course) => (
-            <CourseCard key={course.id} course={course} />
-          ))}
+          {/* CONDITIONAL RENDERING: Show Skeleton OR Real Data */}
+          {isLoading
+            ? // Render 3 Skeleton Cards while loading
+              [1, 2, 3].map((i) => <CourseSkeleton key={i} />)
+            : // Render Real Cards once data arrives
+              courses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
         </div>
       </section>
 
@@ -108,12 +136,41 @@ const CoursesPage = () => {
   );
 };
 
+/* --- SUB-COMPONENTS --- */
+
+/**
+ * Loading Skeleton
+ * A gray placeholder that pulses to indicate data is loading.
+ */
+const CourseSkeleton = () => (
+  <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex flex-col h-[500px] animate-pulse">
+    {/* Badge Placeholder */}
+    <div className="w-24 h-6 bg-slate-200 rounded-full mb-8"></div>
+
+    {/* Title Placeholder */}
+    <div className="w-1/2 h-4 bg-slate-200 rounded-full mb-4"></div>
+    <div className="w-3/4 h-8 bg-slate-200 rounded-full mb-8"></div>
+
+    {/* Features List Placeholder */}
+    <div className="space-y-4 grow">
+      <div className="w-full h-4 bg-slate-100 rounded-full"></div>
+      <div className="w-full h-4 bg-slate-100 rounded-full"></div>
+      <div className="w-2/3 h-4 bg-slate-100 rounded-full"></div>
+    </div>
+
+    {/* Footer Placeholder */}
+    <div className="mt-8 pt-8 border-t border-slate-50">
+      <div className="w-1/3 h-10 bg-slate-200 rounded-lg mb-4"></div>
+      <div className="w-full h-14 bg-slate-200 rounded-2xl"></div>
+    </div>
+  </div>
+);
+
 /**
  * CourseCard Sub-component
  * @param {{ course: Course }} props
  */
 const CourseCard = ({ course }) => {
-  // Calculate discount percentage dynamically
   const savings = useMemo(() => {
     return Math.round(
       ((course.price.original - course.price.current) / course.price.original) *
@@ -176,7 +233,9 @@ const CourseCard = ({ course }) => {
           </span>
         </div>
 
-        <button
+        <Link
+          to="/signup"
+          state={{ selectedCourse: course.title }}
           className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-300 ${
             course.isPopular
               ? "bg-brand-green text-white hover:brightness-110 shadow-lg shadow-brand-green/30"
@@ -184,7 +243,7 @@ const CourseCard = ({ course }) => {
           }`}
         >
           Enroll Now <ArrowRight size={18} />
-        </button>
+        </Link>
       </footer>
     </article>
   );

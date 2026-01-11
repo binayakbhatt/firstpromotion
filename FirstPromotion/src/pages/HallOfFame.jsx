@@ -109,7 +109,7 @@ const HallOfFame = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-1 bg-white shadow-2xl rounded-3xl overflow-hidden border border-slate-100">
           <StatBox number="2,400+" label="Total Selections" />
           <StatBox number="45+" label="Top 100 Ranks" />
-          <StatBox number="18" label="Postal Circles" />
+          <StatBox number="23" label="Postal Circles" />
         </div>
       </section>
 

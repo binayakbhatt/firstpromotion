@@ -9,7 +9,6 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Building2,
   GraduationCap,
   ArrowLeft,
   Loader2,
@@ -229,11 +228,8 @@ const Signup = () => {
         <div className="bg-white py-10 px-8 md:px-12 shadow-2xl rounded-[3.5rem] border border-slate-100">
           <header className="text-center mb-10">
             <h1 className="text-3xl font-black text-brand-navy tracking-tight">
-              Student Registration
+              Registration
             </h1>
-            <p className="text-slate-500 text-sm font-medium mt-2">
-              Enter your departmental details to secure your seat.
-            </p>
           </header>
 
           <form
@@ -294,14 +290,7 @@ const Signup = () => {
               </div>
             </div>
 
-            <div className="md:col-span-2">
-              <Input
-                icon={<Building2 />}
-                name="office"
-                label="Current Office of Posting"
-                placeholder="e.g. New Delhi GPO"
-              />
-            </div>
+            {/* Previously "Current Office of Posting" - Removed */}
 
             <div className="md:col-span-2 space-y-1">
               <Label text="Interested Course" />
