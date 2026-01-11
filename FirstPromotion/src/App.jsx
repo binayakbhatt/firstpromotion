@@ -5,6 +5,7 @@ import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import Advantages from "./components/Advantages";
 import Courses from "./components/Courses";
+import { AuthProvider } from "./context/AuthContext";
 
 // Lazy Loaded Components
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
@@ -20,6 +21,7 @@ const KnowYourPO = lazy(() => import("./pages/KnowYourPO"));
 const LatestUpdates = lazy(() => import("./pages/LatestUpdates"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 
 /**
  * ScrollToTop Helper
@@ -55,88 +57,49 @@ const Home = () => (
 
 const App = () => {
   return (
-    <BrowserRouter>
-      <ScrollToTop />
-      <div className="min-h-screen bg-white">
-        {/* React 19 SEO Hoisting */}
-        <title>India Post LDCE Coaching | FirstPromotion.in</title>
+    <AuthProvider>
+      <BrowserRouter>
+        <ScrollToTop />
+        <div className="min-h-screen bg-white">
+          {/* React 19 SEO Hoisting */}
+          <title>India Post LDCE Coaching | FirstPromotion.in</title>
 
-        <header className="sticky top-0 z-100">
-          <TopBar />
-          <Navbar />
-        </header>
+          <header className="sticky top-0 z-100">
+            <TopBar />
+            <Navbar />
+          </header>
 
-        <main>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route
-              path="/courses"
-              element={
-                <Suspense fallback={<SectionLoader />}>
-                  <CoursesPage />
-                </Suspense>
-              }
-            />
+          <main>
+            {/* WRAPPING ALL ROUTES IN ONE SUSPENSE 
+            This handles loading states for all pages centrally.
+          */}
+            <Suspense fallback={<SectionLoader />}>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/courses" element={<CoursesPage />} />
+                <Route path="/hall-of-fame" element={<HallOfFame />} />
+                <Route path="/know-your-po" element={<KnowYourPO />} />
+                <Route path="/latest-updates" element={<LatestUpdates />} />
 
-            <Route
-              path="/hall-of-fame"
-              element={
-                <Suspense fallback={<SectionLoader />}>
-                  <HallOfFame />
-                </Suspense>
-              }
-            />
-          </Routes>
+                {/* Auth Routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
 
-          <Routes>
-            <Route
-              path="/know-your-po"
-              element={
-                <Suspense fallback={<SectionLoader />}>
-                  <KnowYourPO />
-                </Suspense>
-              }
-            />
-          </Routes>
-          <Routes>
-            <Route
-              path="/latest-updates"
-              element={
-                <Suspense fallback={<SectionLoader />}>
-                  <LatestUpdates />
-                </Suspense>
-              }
-            />
-          </Routes>
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                <Suspense fallback={<SectionLoader />}>
-                  <Login />
-                </Suspense>
-              }
-            />
-          </Routes>
-          <Routes>
-            <Route
-              path="/signup"
-              element={
-                <Suspense fallback={<SectionLoader />}>
-                  <Signup />
-                </Suspense>
-              }
-            />
-          </Routes>
-        </main>
+                {/* Private Routes - ADDED DASHBOARD HERE */}
+                <Route path="/dashboard" element={<Dashboard />} />
+              </Routes>
+            </Suspense>
+          </main>
 
-        <Suspense fallback={null}>
-          <Footer />
-          <WhatsAppButton />
-          <MobileCTA />
-        </Suspense>
-      </div>
-    </BrowserRouter>
+          <Suspense fallback={null}>
+            <Footer />
+            <WhatsAppButton />
+            <MobileCTA />
+          </Suspense>
+        </div>
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 

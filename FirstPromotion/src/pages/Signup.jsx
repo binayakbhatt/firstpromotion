@@ -1,5 +1,5 @@
 import React, { useState, useActionState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   User,
   Mail,
@@ -18,13 +18,14 @@ import {
   ShieldCheck,
   Timer,
   RefreshCw,
+  CreditCard,
+  AlertTriangle,
 } from "lucide-react";
-
+import { useAuth } from "../context/AuthContext";
 /**
  * Validates password strength against industry standards (OWASP)
- * @param {string} password
- * @returns {Object} validation status flags
  */
+
 const validatePassword = (password) => {
   return {
     length: password.length >= 8,
@@ -35,27 +36,22 @@ const validatePassword = (password) => {
 };
 
 /**
- * Sanitizes input strings to prevent basic XSS and SQL injection patterns.
- * @param {string} str
- * @returns {string}
+ * Sanitizes input
  */
 const sanitize = (str) =>
   typeof str === "string" ? str.replace(/[<>'"%;()&+]/g, "").trim() : str;
 
 /**
- * React 19 Server Action for Handling Registration Logic
+ * React 19 Server Action Simulation
  */
 async function signupAction(prevState, formData) {
   const errors = {};
-
-  // Extracting and Sanitizing Data
   const firstName = sanitize(formData.get("firstName"));
   const mobile = formData.get("mobile");
   const employeeId = formData.get("employeeId");
   const password = formData.get("password");
   const confirmPassword = formData.get("confirmPassword");
 
-  // Validation Logic
   if (firstName.length < 2) errors.firstName = "First name is too short.";
   if (!/^[6-9]\d{9}$/.test(mobile))
     errors.mobile = "Enter a valid 10-digit mobile.";
@@ -77,19 +73,43 @@ async function signupAction(prevState, formData) {
 
   if (Object.keys(errors).length > 0) return { success: false, errors };
 
-  // Simulate API Call for sending OTP
   await new Promise((res) => setTimeout(res, 1500));
   return { success: true, errors: null, triggerOtp: true };
 }
 
 const Signup = () => {
-  // State management
-  const [step, setStep] = useState("register"); // 'register' | 'verify'
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+
+  // --- STATE MANAGEMENT ---
+  const [step, setStep] = useState("register"); // 'register' | 'verify' | 'payment'
+
+  // Dynamic Course Data
+  const [availableCourses, setAvailableCourses] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+
+  // Form Data
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    mobile: "",
+    employeeId: "",
+    circle: "",
+    course: "", // Auto-filled via useEffect
+    password: "",
+    confirmPassword: "",
+  });
+
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [passValue, setPassValue] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [resendTimer, setResendTimer] = useState(60);
+
+  // Payment State
+  const [paymentStatus, setPaymentStatus] = useState("idle"); // 'idle' | 'processing' | 'failed' | 'success'
+
   const otpRefs = useRef([]);
 
   const [state, formAction, isPending] = useActionState(signupAction, {
@@ -98,11 +118,52 @@ const Signup = () => {
     triggerOtp: false,
   });
 
-  // Effects
+  // --- EFFECTS ---
+
+  // 1. Fetch Courses (Synchronized with CoursesPage.jsx)
+  useEffect(() => {
+    const fetchCourseList = async () => {
+      try {
+        // SIMULATION: Fetching from Backend DB
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // IMPORTANT: These titles exactly match the titles in CoursesPage.jsx
+        const dbResponse = [
+          "GDS to MTS / Postman",
+          "Postman/MTS to PA/SA",
+          "PA to Inspector Posts",
+          "IP Fast Track",
+          "PS Group B",
+          "Inspector of Posts (2026 Batch)", // Example future course
+        ];
+
+        setAvailableCourses(dbResponse);
+      } catch (error) {
+        console.error("Failed to load courses");
+      } finally {
+        setLoadingCourses(false);
+      }
+    };
+
+    fetchCourseList();
+  }, []);
+
+  // 2. Auto-Select Course (If redirected from Enrollment)
+  useEffect(() => {
+    if (location.state && location.state.selectedCourse) {
+      setFormData((prev) => ({
+        ...prev,
+        course: location.state.selectedCourse,
+      }));
+    }
+  }, [location.state]);
+
+  // 3. Move to OTP step on valid registration
   useEffect(() => {
     if (state.triggerOtp) setStep("verify");
   }, [state.triggerOtp]);
 
+  // 4. OTP Timer
   useEffect(() => {
     if (step === "verify" && resendTimer > 0) {
       const interval = setInterval(() => setResendTimer((t) => t - 1), 1000);
@@ -110,9 +171,14 @@ const Signup = () => {
     }
   }, [step, resendTimer]);
 
-  const strength = validatePassword(passValue);
+  // --- HANDLERS ---
 
-  // OTP Input Logic
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const strength = validatePassword(formData.password);
+
   const handleOtpChange = (index, value) => {
     if (isNaN(value)) return;
     const newOtp = [...otp];
@@ -121,6 +187,26 @@ const Signup = () => {
     if (value && index < 5) otpRefs.current[index + 1].focus();
   };
 
+  const handleOtpSubmit = () => {
+    setStep("payment");
+  };
+
+  const handlePayment = async () => {
+    setPaymentStatus("processing");
+    setTimeout(() => {
+      // Logic: Randomly fail 30% of time to test "Retry" UI
+      const isSuccess = Math.random() > 0.3;
+
+      if (isSuccess) {
+        setPaymentStatus("success");
+        setTimeout(() => navigate("/dashboard"), 1500);
+      } else {
+        setPaymentStatus("failed");
+      }
+    }, 2000);
+  };
+
+  // Static Data
   const circles = [
     "Andhra Pradesh",
     "Assam",
@@ -150,16 +236,125 @@ const Signup = () => {
     "PTC",
     "Postal Directorate",
   ];
-  const courses = [
-    "MTS to Postman/Mail Guard",
-    "GDS to MTS",
-    "Postman to PA/SA",
-    "GDS to PA/SA",
-    "IP Fast Track",
-    "PS Group B",
-  ];
 
-  // --- OTP VERIFICATION VIEW ---
+  // ==========================================
+  // VIEW 3: PAYMENT GATEWAY
+  // ==========================================
+  if (step === "payment") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl border border-slate-100 relative overflow-hidden">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-black text-brand-navy mb-2">
+              Complete Registration
+            </h2>
+            <p className="text-slate-500 text-sm">
+              Secure your seat in the{" "}
+              <span className="font-bold text-brand-green">
+                {formData.course}
+              </span>{" "}
+              batch.
+            </p>
+          </div>
+
+          {/* Order Summary Card */}
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                Student
+              </span>
+              <span className="text-sm font-bold text-brand-navy">
+                {formData.firstName} {formData.lastName}
+              </span>
+            </div>
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                Circle
+              </span>
+              <span className="text-sm font-bold text-brand-navy">
+                {formData.circle}
+              </span>
+            </div>
+            <div className="border-t border-slate-200 my-4"></div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-bold text-slate-600">
+                Total Payable
+              </span>
+              <span className="text-2xl font-black text-brand-green">
+                ₹1,999
+              </span>
+            </div>
+          </div>
+
+          {/* FAILURE STATE UI */}
+          {paymentStatus === "failed" && (
+            <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 animate-shake">
+              <div className="flex items-center gap-3 text-red-600 font-bold mb-2">
+                <AlertTriangle size={20} /> Payment Failed
+              </div>
+              <p className="text-xs text-red-500 leading-relaxed font-medium">
+                The transaction could not be completed. <br />
+                <span className="font-bold">Refund Policy:</span> If amount is
+                deducted, it will be automatically refunded within 24 hours.
+              </p>
+            </div>
+          )}
+
+          {/* SUCCESS STATE UI */}
+          {paymentStatus === "success" && (
+            <div className="bg-green-50 border border-green-100 rounded-xl p-4 mb-6 text-center">
+              <div className="w-12 h-12 bg-green-100 text-brand-green rounded-full flex items-center justify-center mx-auto mb-2">
+                <CheckCircle2 size={24} />
+              </div>
+              <p className="text-brand-green font-bold">Payment Successful!</p>
+              <p className="text-xs text-green-600 mt-1">
+                Redirecting to Dashboard...
+              </p>
+            </div>
+          )}
+
+          {/* Action Button */}
+          <button
+            onClick={handlePayment}
+            disabled={
+              paymentStatus === "processing" || paymentStatus === "success"
+            }
+            className={`w-full py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl transition-all flex items-center justify-center gap-2 ${
+              paymentStatus === "failed"
+                ? "bg-red-500 hover:bg-red-600 text-white"
+                : "bg-brand-navy hover:bg-slate-800 text-white"
+            }`}
+          >
+            {paymentStatus === "processing" ? (
+              <>
+                <Loader2 className="animate-spin" size={18} /> Processing...
+              </>
+            ) : paymentStatus === "failed" ? (
+              <>
+                <RefreshCw size={18} /> Retry Payment
+              </>
+            ) : (
+              <>
+                <CreditCard size={18} /> Pay Now
+              </>
+            )}
+          </button>
+
+          {/* Trust Badge */}
+          <div className="mt-6 text-center">
+            <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
+              <Lock size={10} /> 256-bit SSL Secured Payment
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // VIEW 2: OTP VERIFICATION
+  // ==========================================
   if (step === "verify") {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
@@ -192,9 +387,14 @@ const Signup = () => {
               />
             ))}
           </div>
-          <button className="w-full py-4 bg-brand-navy text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all mb-6">
+
+          <button
+            onClick={handleOtpSubmit}
+            className="w-full py-4 bg-brand-navy text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all mb-6"
+          >
             Confirm & Join
           </button>
+
           <div className="flex flex-col items-center gap-3">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
               <Timer size={14} />{" "}
@@ -214,7 +414,9 @@ const Signup = () => {
     );
   }
 
-  // --- REGISTRATION FORM VIEW ---
+  // ==========================================
+  // VIEW 1: REGISTRATION FORM
+  // ==========================================
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-6">
       <Link
@@ -241,6 +443,8 @@ const Signup = () => {
               name="firstName"
               label="First Name"
               placeholder="Rahul"
+              value={formData.firstName}
+              onChange={handleInputChange}
               error={state?.errors?.firstName}
             />
             <Input
@@ -248,6 +452,8 @@ const Signup = () => {
               name="lastName"
               label="Last Name"
               placeholder="Sharma"
+              value={formData.lastName}
+              onChange={handleInputChange}
             />
             <Input
               icon={<Mail />}
@@ -255,6 +461,8 @@ const Signup = () => {
               type="email"
               label="Email ID"
               placeholder="rahul@example.com"
+              value={formData.email}
+              onChange={handleInputChange}
             />
             <Input
               icon={<Phone />}
@@ -262,6 +470,8 @@ const Signup = () => {
               type="tel"
               label="Mobile No."
               placeholder="9876543210"
+              value={formData.mobile}
+              onChange={handleInputChange}
               error={state?.errors?.mobile}
             />
             <Input
@@ -269,6 +479,8 @@ const Signup = () => {
               name="employeeId"
               label="Employee ID"
               placeholder="12345678"
+              value={formData.employeeId}
+              onChange={handleInputChange}
               error={state?.errors?.employeeId}
             />
 
@@ -279,7 +491,13 @@ const Signup = () => {
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-green"
                   size={18}
                 />
-                <select name="circle" required className="select-style">
+                <select
+                  name="circle"
+                  required
+                  className="select-style"
+                  value={formData.circle}
+                  onChange={handleInputChange}
+                >
                   <option value="">Select Circle</option>
                   {circles.map((c) => (
                     <option key={c} value={c}>
@@ -290,8 +508,6 @@ const Signup = () => {
               </div>
             </div>
 
-            {/* Previously "Current Office of Posting" - Removed */}
-
             <div className="md:col-span-2 space-y-1">
               <Label text="Interested Course" />
               <div className="relative group">
@@ -299,14 +515,35 @@ const Signup = () => {
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-green"
                   size={18}
                 />
-                <select name="course" required className="select-style">
-                  <option value="">Choose Exam Course</option>
-                  {courses.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
+                <select
+                  name="course"
+                  required
+                  className="select-style"
+                  value={formData.course}
+                  onChange={handleInputChange}
+                  disabled={loadingCourses}
+                >
+                  <option value="">
+                    {loadingCourses
+                      ? "Loading Courses..."
+                      : "Choose Exam Course"}
+                  </option>
+                  {!loadingCourses &&
+                    availableCourses.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
                 </select>
+                {/* Visual Loader inside Dropdown */}
+                {loadingCourses && (
+                  <div className="absolute right-10 top-1/2 -translate-y-1/2">
+                    <Loader2
+                      className="animate-spin text-brand-green"
+                      size={16}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -322,7 +559,8 @@ const Signup = () => {
                   name="password"
                   type={showPass ? "text" : "password"}
                   required
-                  onChange={(e) => setPassValue(e.target.value)}
+                  value={formData.password}
+                  onChange={handleInputChange}
                   className="input-style"
                   placeholder="••••••••"
                 />
@@ -350,6 +588,8 @@ const Signup = () => {
                   name="confirmPassword"
                   type={showConfirm ? "text" : "password"}
                   required
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
                   className="input-style"
                   placeholder="••••••••"
                 />
