@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors extracted from your logo */
+  --color-brand-navy: #0a254d;    /* Deep Navy from the 'F' */
+  --color-brand-green: #2db300;   /* Vibrant Green from the 'P' */
+  --color-brand-bg: #fdfdfd;      /* Clean, off-white background */
+  
+  --font-sans: "Inter", "system-ui", "sans-serif";
+}
+
+body {
+  background-color: var(--color-brand-bg);
+  color: #1a1a1a;
+}
