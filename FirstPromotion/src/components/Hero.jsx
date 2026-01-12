@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { UserCircle, ArrowRight } from "lucide-react";
 import heroImg from "../assets/hero-image.webp";
 import heroImgMobile from "../assets/hero-image-mobile.webp";
@@ -75,12 +76,13 @@ const Hero = () => {
               View Courses
               <ArrowRight size={20} />
             </a>
-            <a
-              href={`https://wa.me/${CONTACT_DETAILS.phone}`}
-              className="w-full sm:w-auto bg-white/10 text-white border border-white/30 px-6 md:px-8 py-3 md:py-4 rounded-xl font-bold text-base md:text-lg active:scale-95 text-center transition-all hover:bg-white/20"
+            <Link
+              to="/demo"
+              className="flex items-center gap-2 px-8 py-4 bg-white text-brand-navy border-2 border-slate-200 hover:border-brand-green hover:text-brand-green rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-lg"
             >
+              <ArrowRight size={20} />
               Free Demo Class
-            </a>
+            </Link>
           </div>
 
           {/* Social Proof Section */}

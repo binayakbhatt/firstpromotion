@@ -6,90 +6,53 @@ import {
   Phone,
   Hash,
   MapPin,
-  Lock,
-  Eye,
-  EyeOff,
   GraduationCap,
   ArrowLeft,
   Loader2,
-  UserPlus,
+  Fingerprint,
   AlertCircle,
-  CheckCircle2,
-  ShieldCheck,
-  Timer,
-  RefreshCw,
-  CreditCard,
-  AlertTriangle,
+  Sparkles,
+  Lock,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-/**
- * Validates password strength against industry standards (OWASP)
- */
 
-const validatePassword = (password) => {
-  return {
-    length: password.length >= 8,
-    hasUpper: /[A-Z]/.test(password),
-    hasNumber: /[0-9]/.test(password),
-    hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password),
-  };
-};
+// Import the sub-components we created earlier
+import PaymentGateway from "../components/signup/PaymentGateway";
+import MissedCallVerification from "../components/signup/MissedCallVerification";
 
 /**
- * Sanitizes input
- */
-const sanitize = (str) =>
-  typeof str === "string" ? str.replace(/[<>'"%;()&+]/g, "").trim() : str;
-
-/**
- * React 19 Server Action Simulation
+ * Server Action Simulation
  */
 async function signupAction(prevState, formData) {
-  const errors = {};
-  const firstName = sanitize(formData.get("firstName"));
-  const mobile = formData.get("mobile");
-  const employeeId = formData.get("employeeId");
-  const password = formData.get("password");
-  const confirmPassword = formData.get("confirmPassword");
-
-  if (firstName.length < 2) errors.firstName = "First name is too short.";
-  if (!/^[6-9]\d{9}$/.test(mobile))
-    errors.mobile = "Enter a valid 10-digit mobile.";
-  if (!/^\d{8}$/.test(employeeId))
-    errors.employeeId = "Employee ID must be 8 digits.";
-
-  const strength = validatePassword(password);
-  if (
-    !strength.length ||
-    !strength.hasUpper ||
-    !strength.hasNumber ||
-    !strength.hasSpecial
-  ) {
-    errors.password = "Security requirements not met.";
-  }
-  if (password !== confirmPassword) {
-    errors.confirmPassword = "Passwords do not match.";
-  }
-
-  if (Object.keys(errors).length > 0) return { success: false, errors };
-
+  // Simulating server delay
   await new Promise((res) => setTimeout(res, 1500));
-  return { success: true, errors: null, triggerOtp: true };
+
+  // Note: Most validation happens on client now, but server should double check
+  const passkeyCredentialId = formData.get("passkeyCredentialId");
+
+  if (!passkeyCredentialId) {
+    return {
+      success: false,
+      errors: { general: "Biometric setup failed. Please try again." },
+    };
+  }
+
+  return { success: true, triggerVerification: true };
 }
 
 const Signup = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const formRef = useRef(null);
 
-  // --- STATE MANAGEMENT ---
-  const [step, setStep] = useState("register"); // 'register' | 'verify' | 'payment'
-
-  // Dynamic Course Data
+  // --- UI STEPS ---
+  const [step, setStep] = useState("register");
   const [availableCourses, setAvailableCourses] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
 
-  // Form Data
+  // --- LOCAL ERROR STATE (For pre-passkey validation) ---
+  const [clientErrors, setClientErrors] = useState({});
+
+  // --- FORM DATA ---
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -97,60 +60,33 @@ const Signup = () => {
     mobile: "",
     employeeId: "",
     circle: "",
-    course: "", // Auto-filled via useEffect
-    password: "",
-    confirmPassword: "",
+    course: "",
+    passkeyCredentialId: "",
   });
-
-  const [showPass, setShowPass] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [resendTimer, setResendTimer] = useState(60);
-
-  // Payment State
-  const [paymentStatus, setPaymentStatus] = useState("idle"); // 'idle' | 'processing' | 'failed' | 'success'
-
-  const otpRefs = useRef([]);
 
   const [state, formAction, isPending] = useActionState(signupAction, {
     success: false,
     errors: null,
-    triggerOtp: false,
+    triggerVerification: false,
   });
 
-  // --- EFFECTS ---
-
-  // 1. Fetch Courses (Synchronized with CoursesPage.jsx)
+  // --- FETCH COURSES ---
   useEffect(() => {
-    const fetchCourseList = async () => {
-      try {
-        // SIMULATION: Fetching from Backend DB
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // IMPORTANT: These titles exactly match the titles in CoursesPage.jsx
-        const dbResponse = [
-          "GDS to MTS / Postman",
-          "Postman/MTS to PA/SA",
-          "PA to Inspector Posts",
-          "IP Fast Track",
-          "PS Group B",
-          "Inspector of Posts (2026 Batch)", // Example future course
-        ];
-
-        setAvailableCourses(dbResponse);
-      } catch (error) {
-        console.error("Failed to load courses");
-      } finally {
-        setLoadingCourses(false);
-      }
-    };
-
-    fetchCourseList();
+    setTimeout(() => {
+      setAvailableCourses([
+        "GDS to MTS / Postman",
+        "Postman/MTS to PA/SA",
+        "PA to Inspector Posts",
+        "IP Fast Track",
+        "PS Group B",
+      ]);
+      setLoadingCourses(false);
+    }, 800);
   }, []);
 
-  // 2. Auto-Select Course (If redirected from Enrollment)
+  // Handle auto-selected course
   useEffect(() => {
-    if (location.state && location.state.selectedCourse) {
+    if (location.state?.selectedCourse) {
       setFormData((prev) => ({
         ...prev,
         course: location.state.selectedCourse,
@@ -158,55 +94,104 @@ const Signup = () => {
     }
   }, [location.state]);
 
-  // 3. Move to OTP step on valid registration
+  // Advance to Missed Call Step
   useEffect(() => {
-    if (state.triggerOtp) setStep("verify");
-  }, [state.triggerOtp]);
-
-  // 4. OTP Timer
-  useEffect(() => {
-    if (step === "verify" && resendTimer > 0) {
-      const interval = setInterval(() => setResendTimer((t) => t - 1), 1000);
-      return () => clearInterval(interval);
-    }
-  }, [step, resendTimer]);
-
-  // --- HANDLERS ---
+    if (state.triggerVerification) setStep("missed_call");
+  }, [state.triggerVerification]);
 
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    // Clear specific error when user types
+    if (clientErrors[e.target.name]) {
+      setClientErrors((prev) => ({ ...prev, [e.target.name]: null }));
+    }
   };
 
-  const strength = validatePassword(formData.password);
+  /**
+   * 1. CLIENT SIDE VALIDATION
+   * Returns true if valid, false if not.
+   */
+  const validateForm = () => {
+    const errors = {};
+    const mobileRegex = /^[6-9]\d{9}$/;
+    const empIdRegex = /^\d{8}$/;
 
-  const handleOtpChange = (index, value) => {
-    if (isNaN(value)) return;
-    const newOtp = [...otp];
-    newOtp[index] = value.substring(value.length - 1);
-    setOtp(newOtp);
-    if (value && index < 5) otpRefs.current[index + 1].focus();
+    if (!formData.firstName.trim() || formData.firstName.length < 2) {
+      errors.firstName = "Name is too short.";
+    }
+    if (!formData.lastName.trim()) {
+      errors.lastName = "Last Name is required.";
+    }
+    if (!formData.email.includes("@")) {
+      errors.email = "Invalid email address.";
+    }
+    if (!mobileRegex.test(formData.mobile)) {
+      errors.mobile = "Invalid 10-digit mobile number.";
+    }
+    if (!empIdRegex.test(formData.employeeId)) {
+      errors.employeeId = "Employee ID must be 8 digits.";
+    }
+    if (!formData.circle) {
+      errors.circle = "Please select your Circle.";
+    }
+    if (!formData.course) {
+      errors.course = "Please select a Course.";
+    }
+
+    setClientErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
-  const handleOtpSubmit = () => {
-    setStep("payment");
-  };
+  /**
+   * 2. BIOMETRIC REGISTRATION
+   * Only triggers if validation passes.
+   */
+  const handleRegister = async (e) => {
+    e.preventDefault();
 
-  const handlePayment = async () => {
-    setPaymentStatus("processing");
-    setTimeout(() => {
-      // Logic: Randomly fail 30% of time to test "Retry" UI
-      const isSuccess = Math.random() > 0.3;
+    // Run Validation First
+    const isValid = validateForm();
+    if (!isValid) {
+      // Scroll to top to see errors if needed, or just return
+      return;
+    }
 
-      if (isSuccess) {
-        setPaymentStatus("success");
-        setTimeout(() => navigate("/dashboard"), 1500);
-      } else {
-        setPaymentStatus("failed");
+    try {
+      const challenge = new Uint8Array(32);
+      window.crypto.getRandomValues(challenge);
+
+      const publicKey = {
+        challenge,
+        rp: { name: "FirstPromotion", id: window.location.hostname },
+        user: {
+          id: Uint8Array.from(formData.email || "test", (c) => c.charCodeAt(0)),
+          name: formData.email,
+          displayName: formData.firstName,
+        },
+        pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+        timeout: 60000,
+        authenticatorSelection: {
+          authenticatorAttachment: "platform", // Forces Windows Hello / TouchID / FaceID
+          userVerification: "required",
+        },
+      };
+
+      const credential = await navigator.credentials.create({ publicKey });
+
+      if (credential) {
+        setFormData((prev) => ({
+          ...prev,
+          passkeyCredentialId: credential.id,
+        }));
+        // Submit the form programmatically after successful biometric scan
+        setTimeout(() => formRef.current.requestSubmit(), 100);
       }
-    }, 2000);
+    } catch (err) {
+      console.error("Passkey Creation Failed:", err);
+      alert("Registration canceled or failed. Please try again.");
+    }
   };
 
-  // Static Data
   const circles = [
     "Andhra Pradesh",
     "Assam",
@@ -222,7 +207,7 @@ const Signup = () => {
     "Kerala",
     "Madhya Pradesh",
     "Maharashtra",
-    "North Eastern",
+    "North East",
     "Odisha",
     "Punjab",
     "Rajasthan",
@@ -232,191 +217,20 @@ const Signup = () => {
     "Uttarakhand",
     "West Bengal",
     "APS",
-    "CEPT",
-    "PTC",
-    "Postal Directorate",
+    "Directorate",
   ];
 
-  // ==========================================
-  // VIEW 3: PAYMENT GATEWAY
-  // ==========================================
-  if (step === "payment") {
+  // --- NAVIGATION ROUTING ---
+  if (step === "payment")
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl border border-slate-100 relative overflow-hidden">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-black text-brand-navy mb-2">
-              Complete Registration
-            </h2>
-            <p className="text-slate-500 text-sm">
-              Secure your seat in the{" "}
-              <span className="font-bold text-brand-green">
-                {formData.course}
-              </span>{" "}
-              batch.
-            </p>
-          </div>
-
-          {/* Order Summary Card */}
-          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                Student
-              </span>
-              <span className="text-sm font-bold text-brand-navy">
-                {formData.firstName} {formData.lastName}
-              </span>
-            </div>
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                Circle
-              </span>
-              <span className="text-sm font-bold text-brand-navy">
-                {formData.circle}
-              </span>
-            </div>
-            <div className="border-t border-slate-200 my-4"></div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-bold text-slate-600">
-                Total Payable
-              </span>
-              <span className="text-2xl font-black text-brand-green">
-                ₹1,999
-              </span>
-            </div>
-          </div>
-
-          {/* FAILURE STATE UI */}
-          {paymentStatus === "failed" && (
-            <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 animate-shake">
-              <div className="flex items-center gap-3 text-red-600 font-bold mb-2">
-                <AlertTriangle size={20} /> Payment Failed
-              </div>
-              <p className="text-xs text-red-500 leading-relaxed font-medium">
-                The transaction could not be completed. <br />
-                <span className="font-bold">Refund Policy:</span> If amount is
-                deducted, it will be automatically refunded within 24 hours.
-              </p>
-            </div>
-          )}
-
-          {/* SUCCESS STATE UI */}
-          {paymentStatus === "success" && (
-            <div className="bg-green-50 border border-green-100 rounded-xl p-4 mb-6 text-center">
-              <div className="w-12 h-12 bg-green-100 text-brand-green rounded-full flex items-center justify-center mx-auto mb-2">
-                <CheckCircle2 size={24} />
-              </div>
-              <p className="text-brand-green font-bold">Payment Successful!</p>
-              <p className="text-xs text-green-600 mt-1">
-                Redirecting to Dashboard...
-              </p>
-            </div>
-          )}
-
-          {/* Action Button */}
-          <button
-            onClick={handlePayment}
-            disabled={
-              paymentStatus === "processing" || paymentStatus === "success"
-            }
-            className={`w-full py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl transition-all flex items-center justify-center gap-2 ${
-              paymentStatus === "failed"
-                ? "bg-red-500 hover:bg-red-600 text-white"
-                : "bg-brand-navy hover:bg-slate-800 text-white"
-            }`}
-          >
-            {paymentStatus === "processing" ? (
-              <>
-                <Loader2 className="animate-spin" size={18} /> Processing...
-              </>
-            ) : paymentStatus === "failed" ? (
-              <>
-                <RefreshCw size={18} /> Retry Payment
-              </>
-            ) : (
-              <>
-                <CreditCard size={18} /> Pay Now
-              </>
-            )}
-          </button>
-
-          {/* Trust Badge */}
-          <div className="mt-6 text-center">
-            <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-              <Lock size={10} /> 256-bit SSL Secured Payment
-            </p>
-          </div>
-        </div>
-      </div>
+      <PaymentGateway
+        formData={formData}
+        onSuccess={() => navigate("/dashboard")}
+      />
     );
-  }
+  if (step === "missed_call")
+    return <MissedCallVerification onVerified={() => setStep("payment")} />;
 
-  // ==========================================
-  // VIEW 2: OTP VERIFICATION
-  // ==========================================
-  if (step === "verify") {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-[3.5rem] p-10 shadow-2xl text-center border border-slate-100">
-          <div className="w-20 h-20 bg-brand-green/10 text-brand-green rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShieldCheck size={40} />
-          </div>
-          <h2 className="text-3xl font-black text-brand-navy mb-2">
-            Verify OTP
-          </h2>
-          <p className="text-slate-500 text-sm mb-8 font-medium">
-            We've sent a 6-digit code to your email.
-          </p>
-          <div className="flex justify-between gap-2 mb-8">
-            {otp.map((digit, idx) => (
-              <input
-                key={idx}
-                ref={(el) => (otpRefs.current[idx] = el)}
-                type="text"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleOtpChange(idx, e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Backspace" &&
-                  !otp[idx] &&
-                  idx > 0 &&
-                  otpRefs.current[idx - 1].focus()
-                }
-                className="w-12 h-16 text-2xl font-black text-center bg-slate-50 border-2 border-transparent focus:border-brand-green focus:bg-white rounded-2xl outline-none transition-all"
-              />
-            ))}
-          </div>
-
-          <button
-            onClick={handleOtpSubmit}
-            className="w-full py-4 bg-brand-navy text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all mb-6"
-          >
-            Confirm & Join
-          </button>
-
-          <div className="flex flex-col items-center gap-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
-              <Timer size={14} />{" "}
-              {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Code expired"}
-            </div>
-            {resendTimer === 0 && (
-              <button
-                onClick={() => setResendTimer(60)}
-                className="text-brand-green font-black text-xs uppercase tracking-widest flex items-center gap-2"
-              >
-                <RefreshCw size={14} /> Resend OTP
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ==========================================
-  // VIEW 1: REGISTRATION FORM
-  // ==========================================
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-6">
       <Link
@@ -429,15 +243,26 @@ const Signup = () => {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-3xl">
         <div className="bg-white py-10 px-8 md:px-12 shadow-2xl rounded-[3.5rem] border border-slate-100">
           <header className="text-center mb-10">
+            {/* Marketing Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+              <Sparkles size={14} /> Your Step Towards Promotion Starts Here
+            </div>
             <h1 className="text-3xl font-black text-brand-navy tracking-tight">
-              Registration
+              Create Your Account
             </h1>
           </header>
 
           <form
+            ref={formRef}
             action={formAction}
             className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
           >
+            <input
+              type="hidden"
+              name="passkeyCredentialId"
+              value={formData.passkeyCredentialId}
+            />
+
             <Input
               icon={<User />}
               name="firstName"
@@ -445,7 +270,7 @@ const Signup = () => {
               placeholder="Rahul"
               value={formData.firstName}
               onChange={handleInputChange}
-              error={state?.errors?.firstName}
+              error={clientErrors.firstName}
             />
             <Input
               icon={<User />}
@@ -454,6 +279,7 @@ const Signup = () => {
               placeholder="Sharma"
               value={formData.lastName}
               onChange={handleInputChange}
+              error={clientErrors.lastName}
             />
             <Input
               icon={<Mail />}
@@ -463,6 +289,7 @@ const Signup = () => {
               placeholder="rahul@example.com"
               value={formData.email}
               onChange={handleInputChange}
+              error={clientErrors.email}
             />
             <Input
               icon={<Phone />}
@@ -472,7 +299,7 @@ const Signup = () => {
               placeholder="9876543210"
               value={formData.mobile}
               onChange={handleInputChange}
-              error={state?.errors?.mobile}
+              error={clientErrors.mobile || state?.errors?.mobile}
             />
             <Input
               icon={<Hash />}
@@ -481,7 +308,7 @@ const Signup = () => {
               placeholder="12345678"
               value={formData.employeeId}
               onChange={handleInputChange}
-              error={state?.errors?.employeeId}
+              error={clientErrors.employeeId || state?.errors?.employeeId}
             />
 
             <div className="space-y-1">
@@ -493,8 +320,9 @@ const Signup = () => {
                 />
                 <select
                   name="circle"
-                  required
-                  className="select-style"
+                  className={`select-style ${
+                    clientErrors.circle ? "border-red-300 bg-red-50" : ""
+                  }`}
                   value={formData.circle}
                   onChange={handleInputChange}
                 >
@@ -506,10 +334,15 @@ const Signup = () => {
                   ))}
                 </select>
               </div>
+              {clientErrors.circle && (
+                <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1">
+                  <AlertCircle size={10} /> {clientErrors.circle}
+                </p>
+              )}
             </div>
 
             <div className="md:col-span-2 space-y-1">
-              <Label text="Interested Course" />
+              <Label text="Course Selection" />
               <div className="relative group">
                 <GraduationCap
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-green"
@@ -517,16 +350,15 @@ const Signup = () => {
                 />
                 <select
                   name="course"
-                  required
-                  className="select-style"
+                  className={`select-style ${
+                    clientErrors.course ? "border-red-300 bg-red-50" : ""
+                  }`}
                   value={formData.course}
                   onChange={handleInputChange}
                   disabled={loadingCourses}
                 >
                   <option value="">
-                    {loadingCourses
-                      ? "Loading Courses..."
-                      : "Choose Exam Course"}
+                    {loadingCourses ? "Loading..." : "Select Exam Batch"}
                   </option>
                   {!loadingCourses &&
                     availableCourses.map((c) => (
@@ -535,134 +367,66 @@ const Signup = () => {
                       </option>
                     ))}
                 </select>
-                {/* Visual Loader inside Dropdown */}
-                {loadingCourses && (
-                  <div className="absolute right-10 top-1/2 -translate-y-1/2">
-                    <Loader2
-                      className="animate-spin text-brand-green"
-                      size={16}
-                    />
-                  </div>
-                )}
               </div>
-            </div>
-
-            {/* Password Fields */}
-            <div className="space-y-1 relative">
-              <Label text="Create Password" />
-              <div className="relative group">
-                <Lock
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-green"
-                  size={18}
-                />
-                <input
-                  name="password"
-                  type={showPass ? "text" : "password"}
-                  required
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="input-style"
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300"
-                >
-                  {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {state?.errors?.password && (
-                <ErrorText text={state.errors.password} />
+              {clientErrors.course && (
+                <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1">
+                  <AlertCircle size={10} /> {clientErrors.course}
+                </p>
               )}
             </div>
 
-            <div className="space-y-1 relative">
-              <Label text="Confirm Password" />
-              <div className="relative group">
-                <Lock
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-green"
-                  size={18}
-                />
-                <input
-                  name="confirmPassword"
-                  type={showConfirm ? "text" : "password"}
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className="input-style"
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300"
-                >
-                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+            {/* Server Errors (General) */}
+            {state?.errors?.general && (
+              <div className="md:col-span-2 bg-red-50 text-red-500 p-4 rounded-xl text-center font-bold text-xs flex items-center justify-center gap-2">
+                <AlertCircle size={16} /> {state.errors.general}
               </div>
-              {state?.errors?.confirmPassword && (
-                <ErrorText text={state.errors.confirmPassword} />
-              )}
-            </div>
+            )}
 
-            {/* Strength Meter */}
-            <div className="md:col-span-2 bg-slate-50 p-5 rounded-2xl border border-slate-100 grid grid-cols-2 gap-2">
-              <Requirement met={strength.length} text="8+ Characters" />
-              <Requirement met={strength.hasUpper} text="Uppercase" />
-              <Requirement met={strength.hasNumber} text="Number" />
-              <Requirement met={strength.hasSpecial} text="Symbol" />
-            </div>
-
-            <div className="md:col-span-2 pt-4">
+            <div className="md:col-span-2 pt-6">
               <button
-                type="submit"
+                type="button"
+                onClick={handleRegister}
                 disabled={isPending}
-                className="w-full flex justify-center items-center gap-3 py-4 bg-brand-green hover:bg-emerald-600 disabled:bg-slate-300 text-white rounded-2xl shadow-xl font-black uppercase text-xs tracking-[0.2em] transition-all"
+                className="w-full flex justify-center items-center gap-3 py-4 bg-brand-navy hover:bg-slate-800 disabled:bg-slate-300 text-white rounded-2xl shadow-xl font-black uppercase text-xs tracking-[0.2em] transition-all"
               >
                 {isPending ? (
                   <Loader2 className="animate-spin" size={20} />
                 ) : (
                   <>
-                    <UserPlus size={18} /> Register Now
+                    <Fingerprint size={24} className="text-brand-green" />
+                    <span>Secure Sign Up</span>
                   </>
                 )}
               </button>
+
+              {/* Passkey Explanation Text */}
+              <div className="mt-4 text-center px-4">
+                <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                  <Lock size={10} className="inline mr-1 mb-0.5" />
+                  We use{" "}
+                  <span className="text-slate-600 font-bold">
+                    Passkey Technology
+                  </span>
+                  . Instead of creating a password, you will authenticate using
+                  your device's screen lock (Fingerprint, FaceID, or PIN). It is
+                  faster and more secure.
+                </p>
+              </div>
             </div>
           </form>
         </div>
       </div>
-
-      <style>{`
-        .input-style { width: 100%; padding: 0.875rem 1rem 0.875rem 3rem; background-color: #f8fafc; border: 2px solid transparent; border-radius: 1rem; outline: none; transition: all 0.2s; font-weight: 600; }
-        .input-style:focus { border-color: #10b981; background-color: white; }
-        .select-style { width: 100%; padding: 0.875rem 1rem 0.875rem 3rem; background-color: #f8fafc; border: 2px solid transparent; border-radius: 1rem; outline: none; appearance: none; font-weight: 600; }
-        .select-style:focus { border-color: #10b981; background-color: white; }
-      `}</style>
+      <style>{`.input-style { width: 100%; padding: 0.875rem 1rem 0.875rem 3rem; background-color: #f8fafc; border: 2px solid transparent; border-radius: 1rem; outline: none; transition: all 0.2s; font-weight: 600; } .input-style:focus { border-color: #10b981; background-color: white; } .select-style { width: 100%; padding: 0.875rem 1rem 0.875rem 3rem; background-color: #f8fafc; border: 2px solid transparent; border-radius: 1rem; outline: none; appearance: none; font-weight: 600; } .select-style:focus { border-color: #10b981; background-color: white; }`}</style>
     </div>
   );
 };
 
-/* Helper Components */
 const Label = ({ text }) => (
   <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
     {text}
   </label>
 );
-const ErrorText = ({ text }) => (
-  <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1">
-    <AlertCircle size={10} /> {text}
-  </p>
-);
-const Requirement = ({ met, text }) => (
-  <div
-    className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-tighter ${
-      met ? "text-brand-green" : "text-slate-300"
-    }`}
-  >
-    <CheckCircle2 size={12} /> {text}
-  </div>
-);
+
 const Input = ({ label, error, icon, ...props }) => (
   <div className="space-y-1">
     <Label text={label} />
@@ -671,12 +435,15 @@ const Input = ({ label, error, icon, ...props }) => (
         {icon}
       </div>
       <input
-        required
-        className={`input-style ${error ? "border-red-300 bg-red-50" : ""}`}
         {...props}
+        className={`input-style ${error ? "border-red-300 bg-red-50" : ""}`}
       />
     </div>
-    {error && <ErrorText text={error} />}
+    {error && (
+      <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1">
+        <AlertCircle size={10} /> {error}
+      </p>
+    )}
   </div>
 );
 

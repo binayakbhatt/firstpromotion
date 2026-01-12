@@ -6,6 +6,8 @@ import Hero from "./components/Hero";
 import Advantages from "./components/Advantages";
 import Courses from "./components/Courses";
 import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import DemoPage from "./pages/DemoPage";
 
 // Lazy Loaded Components
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
@@ -81,13 +83,23 @@ const App = () => {
                 <Route path="/hall-of-fame" element={<HallOfFame />} />
                 <Route path="/know-your-po" element={<KnowYourPO />} />
                 <Route path="/latest-updates" element={<LatestUpdates />} />
+                <Route path="/demo" element={<DemoPage />} />
 
                 {/* Auth Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
 
-                {/* Private Routes - ADDED DASHBOARD HERE */}
-                <Route path="/dashboard" element={<Dashboard />} />
+                {/* 🔒 PRIVATE ROUTE 
+                  Wrapped in ProtectedRoute to block unauthorized access 
+                */}
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
               </Routes>
             </Suspense>
           </main>
