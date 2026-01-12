@@ -8,7 +8,7 @@ import {
   LayoutDashboard,
   Sparkles,
 } from "lucide-react";
-import logo from "../assets/logo.jpg";
+import logo from "../assets/logo.png";
 import { useAuth } from "../context/AuthContext"; // 1. Import Auth Context
 
 /**
