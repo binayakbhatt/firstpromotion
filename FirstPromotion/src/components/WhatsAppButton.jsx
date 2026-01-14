@@ -1,7 +1,13 @@
 import React from "react";
-import { CONTACT_DETAILS } from "../constants"; // Import the shared data
+import { CONTACT_DETAILS } from "../constants";
+import { useAuth } from "../context/AuthContext"; // 1. Import Auth Context
 
 const WhatsAppButton = () => {
+  const { user } = useAuth(); // 2. Get user state
+
+  // 3. Hide button if user is logged in
+  if (user) return null;
+
   const whatsappUrl = `https://wa.me/${
     CONTACT_DETAILS.phone
   }?text=${encodeURIComponent(CONTACT_DETAILS.whatsappDefaultMessage)}`;

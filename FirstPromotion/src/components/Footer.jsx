@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "react-router-dom";
 import {
   Instagram,
   Facebook,
@@ -46,10 +47,22 @@ const RESOURCES = [
  * - Social media integration with Lucide icons.
  * - Newsletter subscription UI.
  * * @component
- * @returns {React.JSX.Element} The site footer.
+ * @returns {React.JSX.Element | null} The site footer or null if hidden.
  */
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const location = useLocation();
+
+  // Define routes where the footer should be hidden
+  const hiddenRoutes = ["/dashboard", "/login", "/signup", "/payment-gateway"];
+
+  // Check if the current path starts with any of the hidden routes
+  const isHidden = hiddenRoutes.some((route) =>
+    location.pathname.startsWith(route)
+  );
+
+  // If on a hidden page, render nothing
+  if (isHidden) return null;
 
   return (
     <footer

@@ -9,7 +9,8 @@ import {
   ChevronRight,
   CheckCircle2,
   AlertCircle,
-  Zap, // Imported for the Streak icon
+  Zap,
+  ArrowRight,
 } from "lucide-react";
 import PomodoroTimer from "./PomodoroTimer";
 
@@ -92,63 +93,68 @@ const OverviewTab = ({ user, setActiveTab }) => {
       : "No pending revisions! Great job.";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8 pb-20">
       {/* 1. GREETING & HEADER */}
-      <header className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
-        <div>
-          <h1 className="text-2xl font-black text-brand-navy flex items-center gap-2">
+      <header className="bg-white p-5 md:p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+        <div className="w-full">
+          <h1 className="text-2xl font-black text-brand-navy flex items-center gap-2 mb-2">
             Hello, {firstName} <span className="animate-wave text-2xl">👋</span>
           </h1>
-          <p className="text-slate-500 font-medium mt-1 text-sm flex items-center gap-2">
+          <p className="text-slate-500 font-medium text-sm leading-relaxed flex items-start gap-2">
             <AlertCircle
-              size={14}
-              className={
+              size={16}
+              className={`shrink-0 mt-0.5 ${
                 dueTopics.length > 0 ? "text-red-500" : "text-green-500"
-              }
+              }`}
             />
-            Your topics to revise today:{" "}
-            <span className="font-bold text-brand-navy">{dueTopicNames}</span>
+            <span>
+              Your topics to revise today:{" "}
+              <span className="font-bold text-brand-navy block sm:inline">
+                {dueTopicNames}
+              </span>
+            </span>
           </p>
         </div>
 
-        {/* Quick Stats Pill */}
-        <div className="flex flex-wrap gap-4">
+        {/* Quick Stats Grid - Optimized for Mobile visibility */}
+        <div className="grid grid-cols-3 gap-2 w-full xl:w-auto">
           {/* Total Time */}
-          <div className="px-5 py-3 bg-slate-50 rounded-xl flex flex-col items-center min-w-[100px] border border-transparent hover:border-slate-200 transition-colors">
-            <span className="text-[10px] font-black uppercase text-slate-400 mb-1">
+          <div className="px-2 py-3 md:px-5 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-slate-100 transition-colors">
+            <span className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 mb-1 text-center whitespace-nowrap">
               Total Hours
             </span>
-            <span className="font-black text-brand-navy text-lg leading-none">
+            <span className="font-black text-brand-navy text-base md:text-lg leading-none">
               42h 15m
             </span>
           </div>
 
           {/* Percentile */}
-          <div className="px-5 py-3 bg-slate-50 rounded-xl flex flex-col items-center min-w-[100px] border border-transparent hover:border-slate-200 transition-colors">
-            <span className="text-[10px] font-black uppercase text-slate-400 mb-1">
+          <div className="px-2 py-3 md:px-5 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-slate-100 transition-colors">
+            <span className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 mb-1 text-center whitespace-nowrap">
               Percentile
             </span>
-            <span className="font-black text-brand-green text-lg leading-none">
+            <span className="font-black text-brand-green text-base md:text-lg leading-none">
               Top 5%
             </span>
           </div>
 
-          {/* NEW: Days Streak */}
-          <div className="px-5 py-3 bg-orange-50 rounded-xl flex flex-col items-center min-w-[100px] border border-orange-100 shadow-sm">
-            <span className="text-[10px] font-black uppercase text-orange-400 mb-1 flex items-center gap-1">
-              <Zap size={12} fill="currentColor" /> Streak
+          {/* Streak */}
+          <div className="px-2 py-3 md:px-5 bg-orange-50 rounded-xl flex flex-col items-center justify-center border border-orange-100 shadow-sm">
+            <span className="text-[9px] md:text-[10px] font-black uppercase text-orange-400 mb-1 flex items-center gap-1 text-center whitespace-nowrap">
+              <Zap size={10} fill="currentColor" className="hidden sm:block" />{" "}
+              Streak
             </span>
-            <span className="font-black text-orange-600 text-lg leading-none">
+            <span className="font-black text-orange-600 text-base md:text-lg leading-none">
               12 Days
             </span>
           </div>
         </div>
       </header>
 
-      {/* 2. MAIN ROW (Side-by-Side: Active Course, Pomodoro, Weak Areas) */}
+      {/* 2. MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         {/* COL 1: CONTINUE LEARNING */}
-        <div className="bg-brand-navy rounded-[2rem] p-6 text-white relative overflow-hidden shadow-xl flex flex-col justify-between group">
+        <div className="bg-brand-navy rounded-[2rem] p-6 text-white relative overflow-hidden shadow-xl flex flex-col justify-between group min-h-[220px]">
           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
             <BookOpen size={150} />
           </div>
@@ -164,7 +170,7 @@ const OverviewTab = ({ user, setActiveTab }) => {
             </div>
 
             <h2
-              className="text-xl font-black mb-1 line-clamp-1"
+              className="text-xl font-black mb-1 line-clamp-2 leading-tight"
               title={activeCourse.title}
             >
               {activeCourse.title}
@@ -190,26 +196,31 @@ const OverviewTab = ({ user, setActiveTab }) => {
             </div>
             <h3 className="font-black text-brand-navy text-sm">Weak Areas</h3>
           </div>
-          <div className="space-y-3 flex-1">
+          <div className="space-y-4 flex-1">
             {weakAreas.map((area, idx) => (
               <div key={idx} className="group">
-                <div className="flex justify-between text-[10px] font-bold mb-1">
-                  <span className="text-slate-600">{area.topic}</span>
-                  <span className="text-red-500">{area.accuracy}</span>
+                <div className="flex justify-between text-[10px] font-bold mb-1.5">
+                  <span className="text-slate-600 truncate mr-2">
+                    {area.topic}
+                  </span>
+                  <span className="text-red-500 shrink-0">{area.accuracy}</span>
                 </div>
                 <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-red-400"
+                    className="h-full bg-red-400 transition-all duration-1000"
                     style={{ width: area.accuracy }}
                   ></div>
                 </div>
               </div>
             ))}
           </div>
+          <button className="w-full mt-6 py-2.5 text-[10px] font-bold text-slate-400 hover:text-brand-navy border border-dashed border-slate-200 rounded-xl hover:border-brand-navy transition-all">
+            Take Quiz
+          </button>
         </div>
       </div>
 
-      {/* 3. SMART REVISION TABLE */}
+      {/* 3. SMART REVISION SCHEDULE (RESPONSIVE) */}
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-6 pb-4 flex justify-between items-center border-b border-slate-50">
           <div className="flex items-center gap-3">
@@ -218,16 +229,64 @@ const OverviewTab = ({ user, setActiveTab }) => {
             </div>
             <div>
               <h3 className="text-lg font-black text-brand-navy">
-                Smart Revision Schedule
+                Smart Revision
               </h3>
-              <p className="text-xs text-slate-400 font-medium">
-                Topics due based on Ebbinghaus Forgetting Curve
+              <p className="text-xs text-slate-400 font-medium hidden sm:block">
+                Topics for revision
               </p>
             </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* --- MOBILE VIEW: CARDS (< md) --- */}
+        <div className="block md:hidden p-4 space-y-4">
+          {revisionTopics.map((item) => {
+            const details = getRevisionDetails(item.lastStudiedDaysAgo);
+            return (
+              <div
+                key={item.id}
+                className="bg-slate-50 rounded-2xl p-5 border border-slate-100"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <span className="px-2 py-1 bg-white border border-slate-200 text-slate-500 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                    {item.category}
+                  </span>
+                  {details.due ? (
+                    <span className="flex items-center gap-1 text-red-500 font-bold text-xs bg-red-50 px-2 py-1 rounded-lg">
+                      <AlertCircle size={12} /> Due Today
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-slate-400 font-bold text-xs">
+                      <Calendar size={12} /> {details.label}
+                    </span>
+                  )}
+                </div>
+
+                <h4 className="font-bold text-brand-navy text-lg mb-1 leading-tight">
+                  {item.topic}
+                </h4>
+                <p className="text-xs text-slate-400 mb-5">
+                  Last studied: {item.lastStudiedDaysAgo} days ago
+                </p>
+
+                <button
+                  disabled={!details.due}
+                  className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                    details.due
+                      ? "bg-brand-navy text-white shadow-lg shadow-brand-navy/20 active:scale-95"
+                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  }`}
+                >
+                  {details.due ? "Revise Now" : "Locked"}{" "}
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* --- DESKTOP VIEW: TABLE (>= md) --- */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 text-[10px] uppercase tracking-widest text-slate-400 border-b border-slate-100">
