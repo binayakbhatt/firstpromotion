@@ -32,6 +32,7 @@ const Navbar = () => {
     { label: "Hall of Fame", href: "/hall-of-fame" },
     { label: "Know Your PO", href: "/know-your-po" },
     { label: "Latest Updates", href: "/latest-updates" },
+    { label: "Free Resources", href: "/resources", highlight: true },
   ];
 
   return (

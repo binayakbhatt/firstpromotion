@@ -1,5 +1,6 @@
 import React from "react";
-import { Landmark, Cpu, ClipboardCheck, BookOpenText } from "lucide-react";
+// Added BrainCircuit for "Memory/Revision" and BarChart3 for "Analytics"
+import { Cpu, BookOpenText, BrainCircuit, BarChart3 } from "lucide-react";
 
 /**
  * @typedef {Object} AdvantageItem
@@ -10,44 +11,40 @@ import { Landmark, Cpu, ClipboardCheck, BookOpenText } from "lucide-react";
 
 /**
  * Data configuration for the Advantages section.
- * Separating data from logic improves maintainability.
+ * Refactored to highlight Technical USPs translated into Aspirant Benefits.
  * @type {AdvantageItem[]}
  */
 const ADVANTAGES_DATA = [
   {
-    title: "Departmental Expertise",
+    title: "Never Forget a Rule",
     description:
-      "Specialized coaching specifically for India Post exams like GDS to PA/SA and Postman recruitment with deep focus on departmental rules.",
-    icon: <Landmark className="w-8 h-8 text-brand-green" />,
+      "Our 'Smart Revision Engine' remind you of specific topic exactly when you are about to forget them.",
+    icon: <BrainCircuit className="w-8 h-8 text-brand-green" />,
   },
   {
-    title: "AI-Powered MCQ Practice",
+    title: "Real Exam Simulation",
     description:
-      "Sectional MCQ practice based on previous years' patterns. Includes AI-generated questions to target and strengthen your weak areas effectively.",
+      "Don't just practice; predict your score. Solve topic-wise MCQs of varied difficulty levels.",
     icon: <Cpu className="w-8 h-8 text-brand-green" />,
   },
   {
-    title: "Paper-wise Mock Tests",
+    title: "Pinpoint Weak Areas",
     description:
-      "Experience real-time exam simulation with instant results and detailed performance analytics to track your progress before the real test.",
-    icon: <ClipboardCheck className="w-8 h-8 text-brand-green" />,
+      "Stop wasting time on topics you already know. Our analytics highlight your 'Weak Zones' so you can fix them fast.",
+    icon: <BarChart3 className="w-8 h-8 text-brand-green" />,
   },
   {
-    title: "Updated Study Material",
+    title: "Focus-Driven Learning",
     description:
-      "Every module is updated for the 2026 pattern, including the latest postal guides, volume rules, and general awareness updates.",
+      "Master the syllabus with detailed video lectures, PDF notes, and a built-in Study Timer to maximize your concentration after a long duty shift.",
     icon: <BookOpenText className="w-8 h-8 text-brand-green" />,
   },
 ];
 
 /**
  * Advantages Component
- * * A grid-based feature section highlighting the USPs of FirstPromotion.in.
- * * Features:
- * - Responsive 1 to 3 column grid transition.
- * - Interactive hover states with hardware-accelerated transforms.
- * - React 19 optimized rendering with clean component separation.
- * * @component
+ * A grid-based feature section highlighting the USPs of FirstPromotion.in.
+ * @component
  * @returns {React.JSX.Element} The Advantages section.
  */
 const Advantages = () => {
@@ -71,19 +68,19 @@ const Advantages = () => {
 
         {/* Advantages Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {ADVANTAGES_DATA.map((item, index) => (
+          {ADVANTAGES_DATA.map((item) => (
             <article
-              key={item.title} // React 19 prefers stable keys over indexes
-              className="group bg-white p-8 rounded-4xl border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-3 transition-all duration-500 flex flex-col items-center text-center lg:items-start lg:text-left"
+              key={item.title}
+              className="group bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-3 transition-all duration-500 flex flex-col items-center text-center lg:items-start lg:text-left"
             >
               {/* Icon Container with subtle animation */}
-              <div className="bg-green-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-brand-green group-hover:rotate-360 transition-all duration-700">
+              <div className="bg-green-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-brand-green group-hover:rotate-180 transition-all duration-700">
                 <span className="group-hover:text-white transition-colors duration-300">
                   {item.icon}
                 </span>
               </div>
 
-              <h3 className="text-xl font-black text-brand-navy mb-4 group-hover:text-brand-green transition-colors">
+              <h3 className="text-xl font-black text-brand-navy mb-4 group-hover:text-brand-green transition-colors leading-tight">
                 {item.title}
               </h3>
 
@@ -112,7 +109,7 @@ const Advantages = () => {
 
           <a
             href="#courses"
-            className="relative z-10 bg-brand-green text-white px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all inline-block text-center"
+            className="relative z-10 bg-brand-green text-white px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all inline-block text-center shadow-lg shadow-brand-green/20"
           >
             Get Started
           </a>

@@ -25,6 +25,7 @@ const COURSES_DATA = [
       "Complete preparation for Gramin Dak Sevaks aiming for MTS or Postman cadre. Covers Paper 1 & 2 thoroughly.",
     level: "Entry Level",
     color: "border-brand-green",
+    duration: "3 Months",
   },
   {
     id: 2,
@@ -34,6 +35,7 @@ const COURSES_DATA = [
       "Targeted course for MTS staff looking to upgrade to Postman or Mail Guard. Includes full DTE syllabus coverage.",
     level: "Intermediate",
     color: "border-brand-green",
+    duration: "3 Months",
   },
   {
     id: 3,
@@ -43,6 +45,7 @@ const COURSES_DATA = [
       "Crack the LGO exam to become a Postal Assistant or Sorting Assistant. Intensive coaching on PO Guides and Rules.",
     level: "Intermediate",
     color: "border-brand-green",
+    duration: "6 Months",
   },
   {
     id: 4,
@@ -52,6 +55,7 @@ const COURSES_DATA = [
       "Elite batch for aspiring Inspectors. Deep dive into IPO Acts, Rules, and advanced administrative procedures.",
     level: "Officer Level",
     color: "border-brand-navy",
+    duration: "6 Months",
   },
   {
     id: 5,
@@ -61,6 +65,7 @@ const COURSES_DATA = [
       "Premium coaching for the Postal Service Group B exam. Strategic focus on management and gazetted rules.",
     level: "Officer Level",
     color: "border-brand-navy",
+    duration: "9 Months",
   },
 ];
 

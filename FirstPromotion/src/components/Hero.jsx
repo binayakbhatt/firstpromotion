@@ -53,18 +53,16 @@ const Hero = () => {
 
           {/* Headline */}
           <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-white leading-[1.2] md:leading-[1.1] mb-3 md:mb-6">
-            Your Shortcut to <br />
+            Study Smarter <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-green to-emerald-400">
-              Departmental Promotion
+              Not Longer
             </span>
           </h1>
 
           <p className="text-sm md:text-xl text-slate-300 mb-6 md:mb-8 max-w-xl mx-auto md:mx-0 leading-relaxed">
-            Trusted coaching for{" "}
-            <span className="font-bold text-white">
-              PA, SA, Postman & IPO, PS Group B
-            </span>{" "}
-            Departmental exams.
+            Get structured courses, topic- and paper-wise MCQs, scientifically
+            planned revision, performance insights, and time tracking—so every
+            minute you study counts.
           </p>
 
           {/* CTA Buttons */}

@@ -8,7 +8,7 @@ import {
   ExternalLink,
   ChevronRight,
 } from "lucide-react";
-import logo from "../assets/logo.jpg";
+import logo from "../assets/logo.png";
 
 /**
  * @typedef {Object} FooterLink
@@ -21,14 +21,14 @@ import logo from "../assets/logo.jpg";
 const QUICK_LINKS = [
   { name: "All Courses", href: "#courses" },
   { name: "Know Your Post Office", href: "#" },
-  { name: "Success Stories", href: "#" },
-  { name: "Student Support", href: "#contact" },
+  { name: "Hall of Fame", href: "#" },
+  { name: "Support", href: "#contact" },
 ];
 
 /** @type {FooterLink[]} */
 const RESOURCES = [
   {
-    name: "India Post Official",
+    name: "India Post Official Site",
     href: "https://www.indiapost.gov.in",
     external: true,
   },
@@ -73,9 +73,10 @@ const Footer = () => {
               </span>
             </div>
             <p className="text-sm leading-relaxed font-medium">
-              India's leading specialized coaching platform for Department of
-              Posts exams. Empowering GDS and Postal employees to scale their
-              careers through precision-led education.
+              A focused preparation platform for Department of Posts
+              departmental exams, helping GDS and postal employees study smarter
+              through topic-wise MCQs, planned revision, and performance
+              tracking.
             </p>
             {/* Social Icons Container */}
             <div className="flex gap-4">

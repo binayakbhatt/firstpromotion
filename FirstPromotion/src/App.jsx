@@ -8,6 +8,7 @@ import Courses from "./components/Courses";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DemoPage from "./pages/DemoPage";
+import FreeResources from "./pages/FreeResources";
 
 // Lazy Loaded Components
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
@@ -83,6 +84,7 @@ const App = () => {
                 <Route path="/hall-of-fame" element={<HallOfFame />} />
                 <Route path="/know-your-po" element={<KnowYourPO />} />
                 <Route path="/latest-updates" element={<LatestUpdates />} />
+                <Route path="/resources" element={<FreeResources />} />
                 <Route path="/demo" element={<DemoPage />} />
 
                 {/* Auth Routes */}
