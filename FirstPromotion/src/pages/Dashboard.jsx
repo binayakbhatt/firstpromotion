@@ -6,14 +6,15 @@ import {
   Settings,
   LogOut,
   Bell,
-  User as UserIcon,
-  ChevronDown, // Added to indicate dropdown
+  ChevronDown,
+  LifeBuoy, // Icon for Support
 } from "lucide-react";
 
 // Sub-components
 import OverviewTab from "../components/dashboard/OverviewTab";
 import CoursesTab from "../components/dashboard/CoursesTab";
 import SettingsTab from "../components/dashboard/SettingsTab";
+import SupportTab from "../components/dashboard/SupportTab";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -24,6 +25,7 @@ const Dashboard = () => {
   const navItems = [
     { id: "overview", label: "Overview", icon: <LayoutDashboard size={20} /> },
     { id: "courses", label: "Courses", icon: <BookOpen size={20} /> },
+    { id: "support", label: "Support", icon: <LifeBuoy size={20} /> },
     { id: "settings", label: "Settings", icon: <Settings size={20} /> },
   ];
 
@@ -33,6 +35,8 @@ const Dashboard = () => {
         return <OverviewTab user={user} setActiveTab={setActiveTab} />;
       case "courses":
         return <CoursesTab />;
+      case "support":
+        return <SupportTab user={user} />;
       case "settings":
         return <SettingsTab user={user} />;
       default:
@@ -43,7 +47,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans text-slate-800">
       {/* ==============================================
-          DESKTOP SIDEBAR
+          DESKTOP SIDEBAR (Hidden on Mobile)
       =============================================== */}
       <aside className="hidden lg:flex flex-col w-64 bg-brand-navy text-white fixed h-full z-20 shadow-2xl">
         <div className="p-8">
@@ -72,14 +76,14 @@ const Dashboard = () => {
           ))}
         </nav>
 
-        {/* Decorative Element at bottom of sidebar since Logout is gone */}
+        {/* Decorative Element (Visual balance since Logout is moved) */}
         <div className="p-8 mt-auto opacity-20 pointer-events-none">
           <div className="w-full h-32 bg-gradient-to-t from-white/20 to-transparent rounded-2xl"></div>
         </div>
       </aside>
 
       {/* ==============================================
-          MOBILE BOTTOM NAVIGATION
+          MOBILE BOTTOM NAVIGATION (Visible only on Mobile)
       =============================================== */}
       <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 z-40 px-6 py-3 flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] safe-area-bottom">
         {navItems.map((item) => (
@@ -111,29 +115,30 @@ const Dashboard = () => {
           MAIN CONTENT AREA
       =============================================== */}
       <main className="flex-1 lg:ml-64 relative">
-        {/* --- Header (Mobile & Desktop) --- */}
+        {/* --- Header --- */}
         <header className="bg-white/80 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-sm border-b border-slate-100">
           <div className="flex items-center gap-4">
-            {/* Mobile Logo */}
+            {/* Mobile Logo / Branding */}
             <div className="lg:hidden">
               <span className="text-lg font-black text-brand-navy tracking-tight">
                 FP<span className="text-brand-green">.</span>
               </span>
             </div>
 
-            {/* Desktop Title */}
+            {/* Desktop Page Title */}
             <h1 className="text-xl font-black text-brand-navy capitalize hidden lg:block">
               {activeTab.replace("-", " ")}
             </h1>
           </div>
 
+          {/* Right Side Actions */}
           <div className="flex items-center gap-3 sm:gap-4">
             <button className="p-2 text-slate-400 hover:text-brand-navy transition-colors relative">
               <Bell size={22} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
             </button>
 
-            {/* User Profile Toggle (The ONLY access to Logout) */}
+            {/* User Profile Toggle */}
             <div className="relative">
               <button
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
@@ -150,7 +155,7 @@ const Dashboard = () => {
                 />
               </button>
 
-              {/* --- Profile Dropdown --- */}
+              {/* Profile Dropdown Menu */}
               {isProfileMenuOpen && (
                 <>
                   <div
@@ -196,6 +201,7 @@ const Dashboard = () => {
         </header>
 
         {/* --- Content Body --- */}
+        {/* pb-24 is crucial for Mobile to prevent content hiding behind bottom nav */}
         <div className="p-4 pb-24 sm:p-6 lg:pb-6 max-w-7xl mx-auto animate-in fade-in duration-300">
           {renderContent()}
         </div>
