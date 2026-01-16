@@ -1,474 +1,306 @@
-import React, { useState, useEffect, useCallback } from "react";
-import {
-  Clock,
-  ChevronLeft,
-  ChevronRight,
-  Flag,
-  Menu,
-  X,
-  CheckCircle2,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-// --- 1. MOCK API LAYER (Simulates Server Fetch) ---
-const fetchQuizQuestions = async (topicId, level) => {
-  // Simulate Network Latency
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+// Import Sub-components
+import CourseLibrary from "./courses/CourseLibrary";
+import PaperList from "./courses/PaperList";
+import TopicList from "./courses/TopicList";
+import TopicPlayer from "./courses/player/TopicPlayer";
 
-  const baseQuestions = [
+// --- REALISTIC DATA FETCHERS (Simulating API) ---
+
+const fetchMyCourses = async () => {
+  await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate network delay
+  return [
     {
-      id: 1,
-      question:
-        "Under which clause of the PO Guide Part 1 are the 'Business Hours' of the Post Office defined?",
-      options: ["Clause 1", "Clause 5", "Clause 3", "Clause 8"],
-      correct: 1,
-    },
-    {
-      id: 2,
-      question:
-        "Who is the competent authority to extend the working hours of a Night Post Office?",
-      options: [
-        "Director General",
-        "Head of the Circle (CPMG)",
-        "Superintendent of Post Offices",
-        "Inspector Posts",
+      id: "c_mts_postman",
+      title: "GDS to MTS / Postman Exam Prep",
+      progress: 45,
+      category: "Departmental (LGO)",
+      image: "bg-gradient-to-br from-blue-600 to-cyan-500",
+      description:
+        "Comprehensive batch covering Paper I (Common), Paper II (Postman), and Paper III (Skill Test).",
+      papers: [
+        {
+          id: "p1_common",
+          title: "Paper 1: Basic Postal Knowledge & GK",
+          desc: "Common for MTS & Postman (100 Marks)",
+          topics: [
+            {
+              id: "t1_1",
+              title: "Organization of Department",
+              duration: "25m",
+              status: "completed",
+            },
+            {
+              id: "t1_2",
+              title: "Type of Post Offices & Business Hours",
+              duration: "30m",
+              status: "completed",
+            },
+            {
+              id: "t1_3",
+              title: "Payment of Postage, Stamps & Stationery",
+              duration: "45m",
+              status: "in-progress",
+            },
+            {
+              id: "t1_4",
+              title: "Rules for Packing, Sealing & Posting",
+              duration: "40m",
+              status: "not-started",
+            },
+          ],
+        },
+        {
+          id: "p2_postman",
+          title: "Paper 2: Knowledge of Postal Operations",
+          desc: "Specialized for Postman/Mail Guard (50 Marks)",
+          topics: [
+            {
+              id: "t2_1",
+              title: "Delivery of Mails & Refusal",
+              duration: "35m",
+              status: "not-started",
+            },
+            {
+              id: "t2_2",
+              title: "Money Orders & Redirection",
+              duration: "40m",
+              status: "not-started",
+            },
+          ],
+        },
+        {
+          id: "p3_skill",
+          title: "Paper 3: Data Entry Skill Test (DEST)",
+          desc: "Qualifying Nature (25 Marks)",
+          topics: [
+            {
+              id: "t3_1",
+              title: "Typing Practice Session 1",
+              duration: "15m",
+              status: "not-started",
+            },
+          ],
+        },
       ],
-      correct: 0,
     },
     {
-      id: 3,
-      question:
-        "What is the maximum weight limit for a Book Packet containing periodicals?",
-      options: ["2 Kg", "4 Kg", "5 Kg", "10 Kg"],
-      correct: 2,
+      id: "c_pa_sa",
+      title: "GDS/MTS/Postman to PA/SA (LGO)",
+      progress: 15,
+      category: "Higher Cadre",
+      image: "bg-gradient-to-br from-purple-600 to-indigo-500",
+      description:
+        "Targeted preparation for Postal Assistant & Sorting Assistant promotion.",
+      papers: [
+        {
+          id: "pa_p1",
+          title: "Paper 1: Departmental Knowledge",
+          desc: "PO Guide 1 & 2, Manuals, IT & Products",
+          topics: [
+            {
+              id: "pa_t1",
+              title: "PO Guide Part 1 (Advanced)",
+              duration: "60m",
+              status: "completed",
+            },
+            {
+              id: "pa_t2",
+              title: "PO Guide Part 2 (Foreign Mail)",
+              duration: "50m",
+              status: "in-progress",
+            },
+          ],
+        },
+      ],
     },
   ];
-
-  // Generate dynamic filler questions to make the test realistic
-  const filler = Array.from({ length: 17 }).map((_, i) => ({
-    id: i + 4,
-    question: `(Topic ${topicId} - Q${
-      i + 4
-    }) Which of the following is a primary duty of a Mail Guard?`,
-    options: ["Sorting Mail", "Delivery", "Transmission", "Accounting"],
-    correct: 0,
-  }));
-
-  return [...baseQuestions, ...filler];
 };
 
-// --- 2. SUB-COMPONENT: QUESTION PALETTE ---
-const QuestionPalette = ({
-  current,
-  total,
-  answers,
-  marked,
-  onJump,
-  onClose,
-  onSubmit,
-}) => {
-  return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Mobile Header */}
-      <div className="md:hidden p-4 border-b flex justify-between items-center bg-brand-navy text-white">
-        <span className="font-bold">Question Palette</span>
-        <button onClick={onClose}>
-          <X size={20} />
-        </button>
-      </div>
-
-      {/* Legend */}
-      <div className="p-4 grid grid-cols-2 gap-3 text-[10px] font-bold text-slate-500 border-b border-slate-100 bg-slate-50">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-green-500" /> Answered
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-100 border border-red-300" />{" "}
-          Not Answered
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-purple-500" /> Review
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-slate-200" /> Not Visited
-        </div>
-      </div>
-
-      {/* Grid */}
-      <div className="p-4 grid grid-cols-5 gap-3 overflow-y-auto flex-1 content-start custom-scrollbar">
-        {Array.from({ length: total }).map((_, idx) => {
-          const isAnswered = answers[idx] !== undefined;
-          const isMarked = marked.includes(idx);
-          const isCurrent = current === idx;
-
-          let style = "bg-slate-100 text-slate-600 border-slate-200";
-          if (isAnswered) style = "bg-green-500 text-white border-green-600";
-          else if (isMarked)
-            style = "bg-purple-500 text-white border-purple-600";
-          else if (current > idx && !isAnswered)
-            style = "bg-red-50 text-red-500 border-red-200";
-
-          if (isCurrent) style += " ring-2 ring-offset-2 ring-brand-navy";
-
-          return (
-            <button
-              key={idx}
-              onClick={() => onJump(idx)}
-              className={`h-10 w-10 rounded-lg font-bold text-sm border flex items-center justify-center transition-all ${style}`}
-            >
-              {idx + 1}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Submit Footer */}
-      <div className="p-4 border-t border-slate-200 bg-slate-50 mt-auto">
-        <button
-          onClick={onSubmit}
-          className="w-full py-3 bg-brand-green text-white rounded-xl font-black uppercase tracking-widest shadow-lg shadow-brand-green/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
-        >
-          Submit Test <CheckCircle2 size={18} />
-        </button>
-      </div>
-    </div>
-  );
+// --- POPULATED EXPLORE STORE DATA ---
+const fetchExploreCourses = async () => {
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  return [
+    {
+      id: "store_ipo_2026",
+      title: "Inspector of Posts (IPO) Exam 2026",
+      category: "Officer Grade",
+      price: "₹4,999",
+      originalPrice: "₹7,500",
+      rating: 4.8,
+      students: "1.2k+",
+      image: "bg-gradient-to-br from-orange-500 to-red-500",
+      description:
+        "Complete guide for IPO Exam. Covers Postal Acts, CCS Rules, IPC, CrPC, and Evidence Act.",
+      features: ["Live Classes", "Mock Interviews", "50+ Mock Tests"],
+      isBestSeller: true,
+    },
+    {
+      id: "store_po_guide",
+      title: "Mastering PO Guide Part I & II",
+      category: "Module Only",
+      price: "₹499",
+      originalPrice: "₹999",
+      rating: 4.5,
+      students: "850+",
+      image: "bg-gradient-to-br from-emerald-500 to-teal-500",
+      description:
+        "In-depth video lectures specifically for PO Guide. Perfect for clearing doubts.",
+      features: ["10 Hrs Video", "PDF Notes", "Quiz"],
+      isBestSeller: false,
+    },
+    {
+      id: "store_dest_pro",
+      title: "DEST Pro: Typing Masterclass",
+      category: "Skill Test",
+      price: "₹299",
+      originalPrice: "₹500",
+      rating: 4.9,
+      students: "3k+",
+      image: "bg-gradient-to-br from-slate-600 to-slate-800",
+      description:
+        "Guaranteed speed improvement for Data Entry Skill Test. Includes software simulation.",
+      features: ["Typing Software", "Practice Sets"],
+      isBestSeller: true,
+    },
+    {
+      id: "store_math_reasoning",
+      title: "Maths & Reasoning for Departmental Exams",
+      category: "General Awareness",
+      price: "₹999",
+      originalPrice: "₹1,499",
+      rating: 4.6,
+      students: "500+",
+      image: "bg-gradient-to-br from-pink-500 to-rose-500",
+      description:
+        "Focused mainly on BODMAS, Percentage, Profit/Loss, and Verbal Reasoning.",
+      features: ["Shortcuts", "Solved Papers"],
+      isBestSeller: false,
+    },
+  ];
 };
 
-// --- 3. MAIN COMPONENT ---
-const QuizPage = () => {
+const CoursesTab = () => {
   const navigate = useNavigate();
-  const { topicId } = useParams();
-  const [searchParams] = useSearchParams();
-  const level = searchParams.get("level") || "moderate";
 
-  // --- STATE ---
-  const [currentQ, setCurrentQ] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [markedForReview, setMarkedForReview] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
-  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  // --- NAVIGATION STATE ---
+  const [activeSection, setActiveSection] = useState("my_courses");
 
-  // --- TANSTACK QUERY ---
-  const {
-    data: questions = [],
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ["quizQuestions", topicId, level],
-    queryFn: () => fetchQuizQuestions(topicId, level),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
+  // 1. Load state from sessionStorage if available (Persist user journey)
+  const [selectedCourse, setSelectedCourse] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("fp_course");
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
   });
 
-  const totalQuestions = questions.length;
+  const [selectedPaper, setSelectedPaper] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("fp_paper");
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
 
-  // --- SUBMIT LOGIC ---
-  const submitTest = useCallback(() => {
-    let correctCount = 0;
-    let wrongCount = 0;
-    let skippedCount = 0;
+  const [selectedTopic, setSelectedTopic] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("fp_topic");
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
 
-    questions.forEach((q, index) => {
-      const userAnswer = answers[index];
-      if (userAnswer === undefined) {
-        skippedCount++;
-      } else if (userAnswer === q.correct) {
-        correctCount++;
-      } else {
-        wrongCount++;
-      }
-    });
-
-    const resultData = {
-      score: correctCount * 2,
-      maxScore: totalQuestions * 2,
-      totalQuestions: totalQuestions,
-      correct: correctCount,
-      wrong: wrongCount,
-      skipped: skippedCount,
-      level: level,
-      date: new Date().toISOString(),
-    };
-
-    navigate("/result", { state: resultData, replace: true });
-  }, [answers, level, navigate, questions, totalQuestions]);
-
-  // --- TIMER LOGIC ---
+  // 2. Sync state to sessionStorage
   useEffect(() => {
-    if (isLoading || isError || !questions.length) return;
+    if (selectedCourse)
+      sessionStorage.setItem("fp_course", JSON.stringify(selectedCourse));
+    else sessionStorage.removeItem("fp_course");
 
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          submitTest();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    if (selectedPaper)
+      sessionStorage.setItem("fp_paper", JSON.stringify(selectedPaper));
+    else sessionStorage.removeItem("fp_paper");
 
-    return () => clearInterval(timer);
-  }, [submitTest, isLoading, isError, questions.length]);
+    if (selectedTopic)
+      sessionStorage.setItem("fp_topic", JSON.stringify(selectedTopic));
+    else sessionStorage.removeItem("fp_topic");
+  }, [selectedCourse, selectedPaper, selectedTopic]);
 
-  // --- HELPERS ---
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  // --- TANSTACK QUERIES ---
+  const myCoursesQuery = useQuery({
+    queryKey: ["myCourses"],
+    queryFn: fetchMyCourses,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const exploreQuery = useQuery({
+    queryKey: ["exploreCourses"],
+    queryFn: fetchExploreCourses,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+
+  const handleBuyNow = (id) => {
+    // Navigate to payment or checkout page
+    console.log("Buying course:", id);
+    // navigate(`/checkout/${id}`); // Uncomment when route exists
+    alert("Redirecting to Payment Gateway...");
   };
 
-  const handleOptionSelect = (optionIdx) => {
-    setAnswers({ ...answers, [currentQ]: optionIdx });
-  };
+  // --- RENDER LOGIC (Drill Down Architecture) ---
 
-  const toggleReview = () => {
-    setMarkedForReview((prev) =>
-      prev.includes(currentQ)
-        ? prev.filter((q) => q !== currentQ)
-        : [...prev, currentQ]
-    );
-  };
-
-  // --- LOADING / ERROR STATES ---
-  if (isLoading) {
+  // LEVEL 4: TOPIC PLAYER (Watch Video / Read Notes)
+  if (selectedTopic && selectedPaper) {
     return (
-      <div className="fixed inset-0 z-[100] bg-slate-50 flex flex-col items-center justify-center gap-4">
-        <Loader2 className="h-10 w-10 text-brand-navy animate-spin" />
-        <p className="text-slate-500 font-medium animate-pulse">
-          Loading Test...
-        </p>
-      </div>
+      <TopicPlayer
+        topicId={selectedTopic.id}
+        onBack={() => setSelectedTopic(null)}
+        user={{ name: "Aspirant" }}
+      />
     );
   }
 
-  if (isError) {
+  // LEVEL 3: TOPIC LIST (Chapters inside a Paper)
+  if (selectedPaper && selectedCourse) {
     return (
-      <div className="fixed inset-0 z-[100] bg-slate-50 flex flex-col items-center justify-center gap-4 p-4 text-center">
-        <div className="p-4 bg-red-100 text-red-600 rounded-full">
-          <AlertCircle size={32} />
-        </div>
-        <h2 className="text-xl font-bold text-slate-800">
-          Failed to load quiz
-        </h2>
-        <p className="text-slate-500 max-w-md">
-          {error?.message || "Something went wrong."}
-        </p>
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="px-6 py-2 bg-brand-navy text-white rounded-lg font-bold"
-        >
-          Go Back
-        </button>
-      </div>
+      <TopicList
+        paper={selectedPaper}
+        courseTitle={selectedCourse.title}
+        onBack={() => setSelectedPaper(null)}
+        onSelectTopic={(topic) => setSelectedTopic(topic)}
+      />
     );
   }
 
-  // --- MAIN RENDER ---
-  const currentQuestionData = questions[currentQ];
-  const isLastQuestion = currentQ === totalQuestions - 1;
+  // LEVEL 2: PAPER LIST (Papers inside a Course)
+  if (selectedCourse) {
+    return (
+      <PaperList
+        course={selectedCourse}
+        onBack={() => setSelectedCourse(null)}
+        onSelectPaper={setSelectedPaper}
+      />
+    );
+  }
 
+  // LEVEL 1: MAIN LIBRARY (My Courses / Explore Store)
   return (
-    // FIX: 'fixed inset-0 z-[100]' ensures this covers the App's footer and navbar completely
-    <div className="fixed inset-0 z-[100] flex flex-col bg-slate-50 overflow-hidden">
-      {/* 1. Header */}
-      <header className="h-16 bg-brand-navy text-white flex items-center justify-between px-4 md:px-6 shrink-0 z-30 shadow-md">
-        <div className="flex items-center gap-4">
-          {/* FIX: Explicitly go to Dashboard to restore CourseTab state */}
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="p-1 hover:bg-white/10 rounded transition-colors"
-          >
-            <ChevronLeft size={24} />
-          </button>
-
-          <h1 className="font-black text-lg tracking-wide hidden md:block">
-            GDS to MTS Mock Test
-          </h1>
-          <span className="bg-white/10 px-3 py-1 rounded text-xs font-bold uppercase text-brand-green border border-white/10">
-            {level} Level
-          </span>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div
-            className={`flex items-center gap-2 font-mono text-xl font-bold ${
-              timeLeft < 60 ? "text-red-400 animate-pulse" : "text-white"
-            }`}
-          >
-            <Clock size={20} />
-            {formatTime(timeLeft)}
-          </div>
-          <button
-            onClick={() => setIsPaletteOpen(true)}
-            className="md:hidden p-2 bg-white/10 rounded-lg active:bg-white/20"
-          >
-            <Menu size={20} />
-          </button>
-        </div>
-      </header>
-
-      {/* 2. Main Content Layout */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* LEFT: Question Area */}
-        <main className="flex-1 flex flex-col overflow-y-auto relative z-0">
-          {/* Progress Bar */}
-          <div className="h-1 w-full bg-slate-200">
-            <div
-              className="h-full bg-brand-green transition-all duration-300"
-              style={{ width: `${((currentQ + 1) / totalQuestions) * 100}%` }}
-            />
-          </div>
-
-          <div className="p-6 md:p-10 max-w-4xl mx-auto w-full">
-            {/* Question Text */}
-            <div className="mb-8">
-              <span className="text-slate-400 font-black text-xs uppercase tracking-widest mb-2 block">
-                Question {currentQ + 1} of {totalQuestions}
-              </span>
-              <h2 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug">
-                {currentQuestionData.question}
-              </h2>
-            </div>
-
-            {/* Options */}
-            <div className="space-y-4">
-              {currentQuestionData.options.map((option, idx) => {
-                const isSelected = answers[currentQ] === idx;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => handleOptionSelect(idx)}
-                    className={`w-full text-left p-5 rounded-2xl border-2 transition-all flex items-center gap-4 group ${
-                      isSelected
-                        ? "border-brand-navy bg-indigo-50"
-                        : "border-slate-200 bg-white hover:border-slate-300"
-                    }`}
-                  >
-                    <div
-                      className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm shrink-0 transition-colors ${
-                        isSelected
-                          ? "bg-brand-navy border-brand-navy text-white"
-                          : "border-slate-300 text-slate-400 group-hover:border-slate-400"
-                      }`}
-                    >
-                      {String.fromCharCode(65 + idx)}
-                    </div>
-                    <span
-                      className={`font-medium ${
-                        isSelected
-                          ? "text-brand-navy font-bold"
-                          : "text-slate-600"
-                      }`}
-                    >
-                      {option}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Bottom Actions Bar */}
-          <div className="mt-auto bg-white border-t border-slate-200 p-4 md:p-6 flex items-center justify-between shrink-0 sticky bottom-0 z-10">
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentQ(Math.max(0, currentQ - 1))}
-                disabled={currentQ === 0}
-                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 font-bold text-sm flex items-center gap-2 hover:bg-slate-50 disabled:opacity-50"
-              >
-                <ChevronLeft size={16} /> Prev
-              </button>
-              <button
-                onClick={toggleReview}
-                className={`px-4 py-2 rounded-lg border font-bold text-sm flex items-center gap-2 transition-colors ${
-                  markedForReview.includes(currentQ)
-                    ? "bg-purple-100 text-purple-700 border-purple-200"
-                    : "border-slate-300 text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                <Flag
-                  size={16}
-                  fill={
-                    markedForReview.includes(currentQ) ? "currentColor" : "none"
-                  }
-                />
-                {markedForReview.includes(currentQ) ? "Marked" : "Review"}
-              </button>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() =>
-                  setAnswers({ ...answers, [currentQ]: undefined })
-                }
-                className="hidden md:block px-4 py-2 text-slate-400 hover:text-red-500 text-sm font-bold transition-colors"
-              >
-                Clear Response
-              </button>
-
-              {isLastQuestion ? (
-                <button
-                  onClick={submitTest}
-                  className="px-8 py-3 bg-brand-green text-white rounded-xl font-bold text-sm shadow-lg shadow-brand-green/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-                >
-                  Submit <CheckCircle2 size={16} />
-                </button>
-              ) : (
-                <button
-                  onClick={() =>
-                    setCurrentQ(Math.min(totalQuestions - 1, currentQ + 1))
-                  }
-                  className="px-8 py-3 bg-brand-navy text-white rounded-xl font-bold text-sm shadow-lg shadow-brand-navy/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-                >
-                  Save & Next <ChevronRight size={16} />
-                </button>
-              )}
-            </div>
-          </div>
-        </main>
-
-        {/* RIGHT: Sidebar (Palette) */}
-
-        {/* Mobile Backdrop */}
-        {isPaletteOpen && (
-          <div
-            className="absolute inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
-            onClick={() => setIsPaletteOpen(false)}
-          />
-        )}
-
-        {/* Responsive Palette Container */}
-        <div
-          className={`
-            w-80 h-full bg-white border-l border-slate-200 z-50
-            absolute right-0 top-0 bottom-0 shadow-2xl
-            transform transition-transform duration-300 ease-in-out
-            ${isPaletteOpen ? "translate-x-0" : "translate-x-full"}
-            md:static md:translate-x-0 md:shadow-none md:shrink-0
-        `}
-        >
-          <QuestionPalette
-            current={currentQ}
-            total={totalQuestions}
-            answers={answers}
-            marked={markedForReview}
-            onJump={(idx) => {
-              setCurrentQ(idx);
-              setIsPaletteOpen(false);
-            }}
-            onClose={() => setIsPaletteOpen(false)}
-            onSubmit={submitTest}
-          />
-        </div>
-      </div>
-    </div>
+    <CourseLibrary
+      activeSection={activeSection}
+      setActiveSection={setActiveSection}
+      myCourses={myCoursesQuery.data || []}
+      loadingMy={myCoursesQuery.isLoading}
+      exploreCourses={exploreQuery.data || []}
+      loadingExplore={exploreQuery.isLoading}
+      onSelectCourse={setSelectedCourse}
+      onBuyNow={handleBuyNow}
+    />
   );
 };
 
-export default QuizPage;
+export default CoursesTab;

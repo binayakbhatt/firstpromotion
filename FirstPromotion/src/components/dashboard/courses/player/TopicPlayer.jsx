@@ -179,12 +179,7 @@ const TopicPlayer = ({ topicId, onBack, user = { name: "Student" } }) => {
               <CheckCircle2 size={18} /> Completed{" "}
             </>
           ) : (
-            <>
-              Mark as Complete
-              <span className="ml-2 text-[10px] bg-white/20 px-2 py-0.5 rounded text-white/90 normal-case tracking-normal">
-                +10 XP
-              </span>
-            </>
+            <>Mark as Complete</>
           )}
         </button>
       </div>

@@ -285,7 +285,9 @@ const QuizPage = () => {
       <header className="h-16 bg-brand-navy text-white flex items-center justify-between px-4 md:px-6 shrink-0 z-30 shadow-md">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() =>
+              navigate("/dashboard", { state: { activeTab: "courses" } })
+            } // <--- THE FIX
             className="p-1 hover:bg-white/10 rounded transition-colors"
           >
             <ChevronLeft size={24} />

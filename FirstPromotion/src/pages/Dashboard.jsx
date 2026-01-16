@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom"; // 1. Import useLocation for navigation state
+import { useQuery } from "@tanstack/react-query"; // 2. Import TanStack Query
 import { useAuth } from "../context/AuthContext";
 import {
   LayoutDashboard,
@@ -7,7 +9,7 @@ import {
   LogOut,
   Bell,
   ChevronDown,
-  LifeBuoy, // Icon for Support
+  LifeBuoy,
 } from "lucide-react";
 
 // Sub-components
@@ -16,10 +18,36 @@ import CoursesTab from "../components/dashboard/CoursesTab";
 import SettingsTab from "../components/dashboard/SettingsTab";
 import SupportTab from "../components/dashboard/SupportTab";
 
+// --- MOCK API FOR DASHBOARD DATA ---
+const fetchNotifications = async () => {
+  // Simulate fetching unread notifications count
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  return { unreadCount: 3, items: [] };
+};
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState("overview");
+  const location = useLocation(); // 3. Initialize Location Hook
+
+  // 4. FIX: Initialize state based on incoming navigation state (if exists)
+  const [activeTab, setActiveTab] = useState(
+    location.state?.activeTab || "overview"
+  );
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+
+  // 5. FIX: Update tab if location state changes while component is mounted
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state]);
+
+  // 6. QUERY: Fetch Notifications using TanStack Query
+  const { data: notifications, isLoading: loadingNotifs } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: fetchNotifications,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   // --- NAVIGATION CONFIG ---
   const navItems = [
@@ -76,7 +104,7 @@ const Dashboard = () => {
           ))}
         </nav>
 
-        {/* Decorative Element (Visual balance since Logout is moved) */}
+        {/* Decorative Element */}
         <div className="p-8 mt-auto opacity-20 pointer-events-none">
           <div className="w-full h-32 bg-gradient-to-t from-white/20 to-transparent rounded-2xl"></div>
         </div>
@@ -135,7 +163,10 @@ const Dashboard = () => {
           <div className="flex items-center gap-3 sm:gap-4">
             <button className="p-2 text-slate-400 hover:text-brand-navy transition-colors relative">
               <Bell size={22} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+              {/* Dynamic Notification Badge driven by TanStack Query */}
+              {!loadingNotifs && notifications?.unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+              )}
             </button>
 
             {/* User Profile Toggle */}
@@ -201,7 +232,6 @@ const Dashboard = () => {
         </header>
 
         {/* --- Content Body --- */}
-        {/* pb-24 is crucial for Mobile to prevent content hiding behind bottom nav */}
         <div className="p-4 pb-24 sm:p-6 lg:pb-6 max-w-7xl mx-auto animate-in fade-in duration-300">
           {renderContent()}
         </div>
