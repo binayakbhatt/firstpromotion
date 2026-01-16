@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom"; // 1. Import Hook
 import { ArrowRight, Award, GraduationCap, ShieldCheck } from "lucide-react";
 
 /**
@@ -13,8 +14,6 @@ import { ArrowRight, Award, GraduationCap, ShieldCheck } from "lucide-react";
 
 /**
  * Course catalog data.
- * Managed outside the component to prevent re-declaration on every render.
- * @type {Course[]}
  */
 const COURSES_DATA = [
   {
@@ -71,15 +70,15 @@ const COURSES_DATA = [
 
 /**
  * Courses Component
- * * A responsive grid displaying available departmental coaching batches.
- * * Features:
- * - Dynamic badge styling based on cadre level.
- * - Interactive 'View Details' buttons with hover animations.
- * - React 19 optimized list rendering with stable keys.
- * * @component
- * @returns {React.JSX.Element} The Courses/Batches section.
  */
 const Courses = () => {
+  const navigate = useNavigate(); // 2. Initialize Hook
+
+  // 3. Handler to redirect to Dashboard > Courses Tab
+  const handleCourseClick = () => {
+    navigate("/courses", { state: { activeTab: "courses" } });
+  };
+
   return (
     <section
       className="py-24 bg-white"
@@ -151,6 +150,7 @@ const Courses = () => {
               {/* Action Button */}
               <div className="mt-auto">
                 <button
+                  onClick={handleCourseClick} // 4. Attach Handler
                   className="w-full py-4 rounded-xl border-2 border-slate-100 font-black text-slate-600 flex items-center justify-center gap-2 group-hover:bg-brand-navy group-hover:text-white group-hover:border-brand-navy group-hover:shadow-lg group-hover:shadow-brand-navy/20 transition-all duration-300 active:scale-95"
                   aria-label={`View details for ${course.title}`}
                 >
