@@ -13,10 +13,13 @@ import {
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-// --- 1. MOCK API LAYER (Simulates Server Fetch) ---
+// --- 1. MOCK API LAYER (Simulating Server) ---
 const fetchQuizQuestions = async (topicId, level) => {
-  // Simulate Network Latency
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  // Simulate Network Latency (e.g., 1.5 seconds)
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+
+  // Throw error simulator (uncomment to test error state)
+  // if (Math.random() < 0.1) throw new Error("Failed to fetch questions");
 
   const baseQuestions = [
     {
@@ -47,7 +50,7 @@ const fetchQuizQuestions = async (topicId, level) => {
     },
   ];
 
-  // Generate dynamic filler questions to make the test realistic
+  // Generate dynamic filler questions based on topicId
   const filler = Array.from({ length: 17 }).map((_, i) => ({
     id: i + 4,
     question: `(Topic ${topicId} - Q${
@@ -141,7 +144,7 @@ const QuestionPalette = ({
 // --- 3. MAIN COMPONENT ---
 const QuizPage = () => {
   const navigate = useNavigate();
-  const { topicId } = useParams();
+  const { topicId } = useParams(); // Get ID from URL
   const [searchParams] = useSearchParams();
   const level = searchParams.get("level") || "moderate";
 
@@ -161,8 +164,8 @@ const QuizPage = () => {
   } = useQuery({
     queryKey: ["quizQuestions", topicId, level],
     queryFn: () => fetchQuizQuestions(topicId, level),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
+    staleTime: Infinity, // Questions shouldn't change during the exam
+    refetchOnWindowFocus: false, // Don't refetch if user alt-tabs
   });
 
   const totalQuestions = questions.length;
@@ -200,13 +203,14 @@ const QuizPage = () => {
 
   // --- TIMER LOGIC ---
   useEffect(() => {
+    // Only start timer if data is loaded
     if (isLoading || isError || !questions.length) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          submitTest();
+          submitTest(); // Auto-submit
           return 0;
         }
         return prev - 1;
@@ -235,21 +239,22 @@ const QuizPage = () => {
     );
   };
 
-  // --- LOADING / ERROR STATES ---
+  // --- LOADING STATE ---
   if (isLoading) {
     return (
-      <div className="fixed inset-0 z-[100] bg-slate-50 flex flex-col items-center justify-center gap-4">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 gap-4">
         <Loader2 className="h-10 w-10 text-brand-navy animate-spin" />
         <p className="text-slate-500 font-medium animate-pulse">
-          Loading Test...
+          Preparing your exam environment...
         </p>
       </div>
     );
   }
 
+  // --- ERROR STATE ---
   if (isError) {
     return (
-      <div className="fixed inset-0 z-[100] bg-slate-50 flex flex-col items-center justify-center gap-4 p-4 text-center">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 gap-4 p-4 text-center">
         <div className="p-4 bg-red-100 text-red-600 rounded-full">
           <AlertCircle size={32} />
         </div>
@@ -257,13 +262,14 @@ const QuizPage = () => {
           Failed to load quiz
         </h2>
         <p className="text-slate-500 max-w-md">
-          {error?.message || "Something went wrong."}
+          {error?.message ||
+            "Something went wrong while fetching the questions."}
         </p>
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() => window.location.reload()}
           className="px-6 py-2 bg-brand-navy text-white rounded-lg font-bold"
         >
-          Go Back
+          Try Again
         </button>
       </div>
     );
@@ -274,19 +280,16 @@ const QuizPage = () => {
   const isLastQuestion = currentQ === totalQuestions - 1;
 
   return (
-    // FIX: 'fixed inset-0 z-[100]' ensures this covers the App's footer and navbar completely
-    <div className="fixed inset-0 z-[100] flex flex-col bg-slate-50 overflow-hidden">
+    <div className="h-screen w-full flex flex-col bg-slate-50 overflow-hidden">
       {/* 1. Header */}
       <header className="h-16 bg-brand-navy text-white flex items-center justify-between px-4 md:px-6 shrink-0 z-30 shadow-md">
         <div className="flex items-center gap-4">
-          {/* FIX: Explicitly go to Dashboard to restore CourseTab state */}
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate(-1)}
             className="p-1 hover:bg-white/10 rounded transition-colors"
           >
             <ChevronLeft size={24} />
           </button>
-
           <h1 className="font-black text-lg tracking-wide hidden md:block">
             GDS to MTS Mock Test
           </h1>
@@ -313,7 +316,7 @@ const QuizPage = () => {
         </div>
       </header>
 
-      {/* 2. Main Content Layout */}
+      {/* 2. Main Content */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* LEFT: Question Area */}
         <main className="flex-1 flex flex-col overflow-y-auto relative z-0">

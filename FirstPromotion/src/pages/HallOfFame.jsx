@@ -1,17 +1,9 @@
-import React, { useState, useEffect, useMemo } from "react";
-import {
-  Trophy,
-  Medal,
-  Star,
-  Search,
-  GraduationCap,
-  MapPin,
-  Loader2,
-  WifiOff,
-} from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query"; // 1. Import Hook
+import { Search, GraduationCap, MapPin, Wifi, WifiOff } from "lucide-react";
 
-/** * Local Fallback Data
- * This shows immediately and stays if the server is unreachable.
+/** * LOCAL FALLBACK DATA
+ * Shown initially or when offline.
  */
 const DUMMY_ACHIEVERS = [
   {
@@ -46,55 +38,51 @@ const DUMMY_ACHIEVERS = [
   },
 ];
 
+/**
+ * FETCH FUNCTION
+ */
+const fetchAchievers = async () => {
+  // Replace with your real API endpoint
+  const response = await fetch("https://api.firstpromotion.in/v1/hall-of-fame");
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch achievers");
+  }
+
+  return response.json();
+};
+
 const HallOfFame = () => {
-  // 1. Initialize with dummy data so the page isn't empty
-  const [candidates, setCandidates] = useState(DUMMY_ACHIEVERS);
-  const [loading, setLoading] = useState(false);
-  const [isLive, setIsLive] = useState(false); // Tracks if data came from server
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    const controller = new AbortController();
+  // 2. Use TanStack Query
+  const {
+    data: serverData,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["hallOfFame"],
+    queryFn: fetchAchievers,
+    staleTime: 1000 * 60 * 10, // Data stays fresh for 10 minutes
+    retry: 1, // Retry once before falling back to dummy data
+  });
 
-    const fetchLiveAchievers = async () => {
-      try {
-        setLoading(true);
-        // Replace with your real API when ready
-        const response = await fetch(
-          "https://api.firstpromotion.in/v1/hall-of-fame",
-          {
-            signal: controller.signal,
-          }
-        );
+  // 3. Determine Source Data
+  // If loading or error, show dummy data. If success, show server data.
+  const activeCandidates = isLoading || isError ? DUMMY_ACHIEVERS : serverData;
 
-        if (response.ok) {
-          const data = await response.json();
-          setCandidates(data);
-          setIsLive(true); // Successfully connected to server
-        }
-      } catch (err) {
-        console.log("Using offline/dummy data due to connection error.");
-        setIsLive(false); // Keep showing dummy data
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLiveAchievers();
-    return () => controller.abort();
-  }, []);
-
+  // 4. Client-side Filtering
   const filteredCandidates = useMemo(() => {
-    return candidates.filter(
+    return activeCandidates.filter(
       (c) =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.circle.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [searchTerm, candidates]);
+  }, [searchTerm, activeCandidates]);
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="bg-brand-navy pt-24 pb-20 px-6 text-center text-white">
+      <header className="bg-brand-navy pt-24 pb-20 px-6 text-center text-white relative">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-black mb-4">
             Hall of <span className="text-brand-green">Fame</span>
@@ -102,8 +90,26 @@ const HallOfFame = () => {
           <p className="text-lg md:text-xl font-medium opacity-90">
             Celebrating the achievements of our successful candidates
           </p>
+
+          {/* Connection Status Indicator */}
+          <div className="mt-6 flex justify-center">
+            {isLoading ? (
+              <span className="text-xs font-bold text-slate-300 animate-pulse flex items-center gap-2">
+                Connecting to server...
+              </span>
+            ) : isError ? (
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-bold text-slate-300">
+                <WifiOff size={12} /> Offline Mode (Archived)
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-green/20 text-brand-green text-xs font-bold">
+                <Wifi size={12} /> Live Data
+              </span>
+            )}
+          </div>
         </div>
       </header>
+
       {/* Stats Bar */}
       <section className="max-w-6xl mx-auto px-6 -mt-10 relative z-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-1 bg-white shadow-2xl rounded-3xl overflow-hidden border border-slate-100">
@@ -128,24 +134,27 @@ const HallOfFame = () => {
           />
         </div>
 
-        {loading && (
-          <div className="text-center mb-8 animate-pulse text-slate-400">
-            Updating list...
-          </div>
-        )}
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredCandidates.map((candidate) => (
             <AchieverCard key={candidate.id} candidate={candidate} />
           ))}
         </div>
+
+        {/* Empty State if search yields no results */}
+        {filteredCandidates.length === 0 && (
+          <div className="text-center py-10 text-slate-400">
+            <p>No achievers found matching "{searchTerm}"</p>
+          </div>
+        )}
       </section>
     </main>
   );
 };
 
+/* --- SUB COMPONENTS --- */
+
 const AchieverCard = ({ candidate }) => (
-  <article className="bg-white p-6 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all border border-slate-100 group">
+  <article className="bg-white p-6 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all border border-slate-100 group animate-in fade-in duration-500">
     <div className="flex items-center gap-4 mb-4">
       <img
         src={
@@ -178,10 +187,6 @@ const AchieverCard = ({ candidate }) => (
   </article>
 );
 
-/**
- * StatBox Sub-component
- * Used to display the highlight metrics at the top of the page.
- */
 const StatBox = ({ number, label }) => (
   <div className="bg-white p-8 text-center border-b md:border-b-0 md:border-r last:border-0 border-slate-100">
     <div className="text-4xl font-black text-brand-navy mb-1">{number}</div>

@@ -7,10 +7,14 @@ import Advantages from "./components/Advantages";
 import Courses from "./components/Courses";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+
+// Standard Imports (Critical pages)
 import DemoPage from "./pages/DemoPage";
 import FreeResources from "./pages/FreeResources";
+// Note: You can lazy load these too if you want, but standard import is fine.
 
 // Lazy Loaded Components
+const QuizPage = lazy(() => import("./pages/QuizPage")); // Lazy Load this for performance
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
 const Updates = lazy(() => import("./components/Updates"));
 const Testimonials = lazy(() => import("./components/Testimonials"));
@@ -18,7 +22,7 @@ const FAQ = lazy(() => import("./components/FAQ"));
 const Contact = lazy(() => import("./components/contact"));
 const Footer = lazy(() => import("./components/Footer"));
 const WhatsAppButton = lazy(() => import("./components/WhatsAppButton"));
-const MobileCTA = lazy(() => import("./components/MobileCTA.jsx"));
+const MobileCTA = lazy(() => import("./components/MobileCTA"));
 const HallOfFame = lazy(() => import("./pages/HallOfFame"));
 const KnowYourPO = lazy(() => import("./pages/KnowYourPO"));
 const LatestUpdates = lazy(() => import("./pages/LatestUpdates"));
@@ -28,7 +32,6 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 
 /**
  * ScrollToTop Helper
- * Ensures the page starts at the top when navigating between routes.
  */
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -64,21 +67,19 @@ const App = () => {
       <BrowserRouter>
         <ScrollToTop />
         <div className="min-h-screen bg-white">
-          {/* React 19 SEO Hoisting */}
           <title>India Post LDCE Coaching | FirstPromotion.in</title>
 
-          <header className="sticky top-0 z-100">
+          <header className="sticky top-0 z-50">
+            {" "}
+            {/* Changed z-100 to z-50 (Tailwind standard) */}
             <TopBar />
             <Navbar />
           </header>
 
           <main>
-            {/* WRAPPING ALL ROUTES IN ONE SUSPENSE 
-            This handles loading states for all pages centrally.
-          */}
             <Suspense fallback={<SectionLoader />}>
               <Routes>
-                {/* Public Routes */}
+                {/* --- Public Routes --- */}
                 <Route path="/" element={<Home />} />
                 <Route path="/courses" element={<CoursesPage />} />
                 <Route path="/hall-of-fame" element={<HallOfFame />} />
@@ -87,18 +88,26 @@ const App = () => {
                 <Route path="/resources" element={<FreeResources />} />
                 <Route path="/demo" element={<DemoPage />} />
 
-                {/* Auth Routes */}
+                {/* --- Auth Routes --- */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
 
-                {/* 🔒 PRIVATE ROUTE 
-                  Wrapped in ProtectedRoute to block unauthorized access 
-                */}
+                {/* --- PROTECTED ROUTES --- */}
                 <Route
                   path="/dashboard"
                   element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Fixed: Moved Quiz route INSIDE the Routes container */}
+                <Route
+                  path="/quiz/:topicId"
+                  element={
+                    <ProtectedRoute>
+                      <QuizPage />
                     </ProtectedRoute>
                   }
                 />

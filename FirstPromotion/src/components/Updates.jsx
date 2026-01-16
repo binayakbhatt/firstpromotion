@@ -1,74 +1,56 @@
-import React, { useState, useEffect } from "react";
-import { Bell, Calendar, ChevronRight, Megaphone } from "lucide-react";
+import React from "react";
+import { useQuery } from "@tanstack/react-query"; // 1. Import Hook
+import {
+  Bell,
+  Calendar,
+  ChevronRight,
+  Megaphone,
+  AlertCircle,
+} from "lucide-react";
 
 /**
- * @typedef {Object} NewsUpdate
- * @property {number} id - Unique identifier for the update.
- * @property {'New' | 'Alert' | 'Result'} tag - Category of the news item.
- * @property {string} text - The main announcement text.
- * @property {string} date - Display date of the update.
+ * MOCK DATA & FETCHER
+ * In a real app, this would be in a separate service file (e.g., api/news.js)
  */
+const fetchNewsUpdates = async () => {
+  // Simulate API Network Latency
+  await new Promise((resolve) => setTimeout(resolve, 1500));
 
-/**
- * Latest Updates Section
- * * Optimized for React 19.
- * * Features:
- * - Dynamic data fetching simulation with cleanup.
- * - Skeleton loader for improved User Experience (UX).
- * - Interactive hover states and Lucide icon integration.
- * - Categorized color coding for news tags.
- * * @component
- */
+  // Return Mock Response
+  return [
+    {
+      id: 1,
+      tag: "New",
+      text: "GDS to MTS/Postman Exam 2026 Notification Released.",
+      date: "Jan 05",
+    },
+    {
+      id: 2,
+      tag: "Alert",
+      text: "Last date to apply for PS Group B is Jan 20th.",
+      date: "Jan 02",
+    },
+    {
+      id: 3,
+      tag: "Result",
+      text: "IPO 2025 Final Merit List is now available.",
+      date: "Dec 28",
+    },
+  ];
+};
+
 const Updates = () => {
-  const [updates, setUpdates] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // AbortController or a simple boolean flag to prevent state updates on unmounted components
-    let isMounted = true;
-
-    const fetchUpdates = async () => {
-      try {
-        // Simulate API latency
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        const mockData = [
-          {
-            id: 1,
-            tag: "New",
-            text: "GDS to MTS/Postman Exam 2026 Notification Released.",
-            date: "Jan 05",
-          },
-          {
-            id: 2,
-            tag: "Alert",
-            text: "Last date to apply for PS Group B is Jan 20th.",
-            date: "Jan 02",
-          },
-          {
-            id: 3,
-            tag: "Result",
-            text: "IPO 2025 Final Merit List is now available.",
-            date: "Dec 28",
-          },
-        ];
-
-        if (isMounted) {
-          setUpdates(mockData);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Failed to fetch updates:", error);
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchUpdates();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  // 2. Implementation of useQuery
+  const {
+    data: updates,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["newsUpdates"], // Unique key for caching
+    queryFn: fetchNewsUpdates,
+    staleTime: 1000 * 60 * 5, // Data remains fresh for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch just because user clicked the window
+  });
 
   return (
     <section
@@ -87,12 +69,22 @@ const Updates = () => {
           </div>
 
           {/* Main Feed Container */}
-          <div className="grow bg-white rounded-2xl border border-slate-200 shadow-sm p-2 md:p-4 flex flex-col justify-center min-h-40">
-            {loading ? (
-              <LoadingSkeleton />
-            ) : (
+          <div className="grow bg-white rounded-2xl border border-slate-200 shadow-sm p-2 md:p-4 flex flex-col justify-center min-h-40 relative">
+            {/* Loading State */}
+            {isLoading && <LoadingSkeleton />}
+
+            {/* Error State */}
+            {isError && (
+              <div className="flex items-center justify-center gap-2 text-red-400 font-bold py-6">
+                <AlertCircle size={20} />
+                <span>Failed to load updates.</span>
+              </div>
+            )}
+
+            {/* Success State */}
+            {!isLoading && !isError && (
               <div className="divide-y divide-slate-50">
-                {updates.map((item) => (
+                {updates?.map((item) => (
                   <NewsRow key={item.id} item={item} />
                 ))}
               </div>
@@ -117,6 +109,8 @@ const Updates = () => {
   );
 };
 
+/* --- SUB-COMPONENTS --- */
+
 /** @private */
 const NewsRow = ({ item }) => (
   <div className="flex items-center justify-between group cursor-pointer p-3 hover:bg-slate-50 rounded-xl transition-all duration-300">
@@ -125,6 +119,8 @@ const NewsRow = ({ item }) => (
         className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md shrink-0 ${
           item.tag === "New"
             ? "bg-green-100 text-brand-green"
+            : item.tag === "Alert"
+            ? "bg-red-100 text-red-600"
             : "bg-blue-100 text-brand-navy"
         }`}
       >

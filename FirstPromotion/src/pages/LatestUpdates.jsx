@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React from "react";
+import { useQuery } from "@tanstack/react-query"; // 1. Import Hook
 import {
   Bell,
   Calendar,
   ArrowRight,
-  Newspaper,
   Loader2,
   WifiOff,
   RefreshCcw,
@@ -11,62 +11,56 @@ import {
 } from "lucide-react";
 
 /**
- * Latest Updates Component
- * Optimized for real-time departmental announcements.
+ * MOCK DATA / ARCHIVED UPDATES
+ * Used as fallback when the API is unreachable
  */
+const ARCHIVED_UPDATES = [
+  {
+    id: 1,
+    title: "GDS to MTS 2026 Exam Date Announced",
+    description:
+      "The official notification for the GDS to MTS promotion exam has been released. Exams are scheduled for March 15th.",
+    date: "Jan 10, 2026",
+    tag: "Exam Alert",
+    priority: "high",
+  },
+  {
+    id: 2,
+    title: "New Study Material for PA/SA Exam",
+    description:
+      "We have uploaded fresh mock tests covering the latest PO Guide Part II updates.",
+    date: "Jan 08, 2026",
+    tag: "New Content",
+    priority: "normal",
+  },
+];
+
+/**
+ * FETCH FUNCTION
+ */
+const fetchUpdates = async () => {
+  // Replace with your actual backend URL
+  const response = await fetch("https://api.firstpromotion.in/v1/updates");
+
+  if (!response.ok) {
+    throw new Error("Could not sync with update server");
+  }
+
+  return response.json();
+};
+
 const LatestUpdates = () => {
-  const [updates, setUpdates] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // 2. Use TanStack Query
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
+    queryKey: ["departmentalUpdates"],
+    queryFn: fetchUpdates,
+    refetchInterval: 1000 * 60 * 5, // Auto-refresh every 5 minutes
+    retry: 1, // Retry once before showing error
+    refetchOnWindowFocus: true, // Refresh when user comes back to tab
+  });
 
-  const fetchUpdates = async (signal) => {
-    try {
-      setLoading(true);
-      // Replace with your actual backend URL when ready
-      const response = await fetch("https://api.firstpromotion.in/v1/updates", {
-        signal,
-      });
-
-      if (!response.ok) throw new Error("Could not sync with update server");
-
-      const data = await response.json();
-      setUpdates(data);
-      setError(null);
-    } catch (err) {
-      if (err.name !== "AbortError") {
-        setError("Currently showing archived updates.");
-        // Fallback dummy data for UI development
-        setUpdates([
-          {
-            id: 1,
-            title: "GDS to MTS 2026 Exam Date Announced",
-            description:
-              "The official notification for the GDS to MTS promotion exam has been released. Exams are scheduled for March 15th.",
-            date: "Jan 10, 2026",
-            tag: "Exam Alert",
-            priority: "high",
-          },
-          {
-            id: 2,
-            title: "New Study Material for PA/SA Exam",
-            description:
-              "We have uploaded fresh mock tests covering the latest PO Guide Part II updates.",
-            date: "Jan 08, 2026",
-            tag: "New Content",
-            priority: "normal",
-          },
-        ]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchUpdates(controller.signal);
-    return () => controller.abort();
-  }, []);
+  // Determine which data to show: Real data or Fallback
+  const displayUpdates = isError ? ARCHIVED_UPDATES : data;
 
   return (
     <div className="min-h-screen bg-white">
@@ -77,13 +71,19 @@ const LatestUpdates = () => {
         </div>
 
         <div className="max-w-4xl mx-auto relative z-10">
+          {/* Live Badge - Shows 'Syncing...' when refetching in background */}
           <div className="inline-flex items-center gap-2 bg-brand-green/20 text-brand-green px-4 py-1.5 rounded-full text-xs font-black uppercase mb-6 tracking-widest">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-green opacity-75"></span>
+              <span
+                className={`absolute inline-flex h-full w-full rounded-full bg-brand-green opacity-75 ${
+                  isFetching ? "animate-ping" : ""
+                }`}
+              ></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-green"></span>
             </span>
-            Live Updates
+            {isFetching ? "Syncing..." : "Live Updates"}
           </div>
+
           <h1 className="text-4xl md:text-6xl font-black mb-6">
             Stay <span className="text-brand-green">Ahead</span>
           </h1>
@@ -97,7 +97,8 @@ const LatestUpdates = () => {
       {/* Updates List Section */}
       <section className="max-w-4xl mx-auto px-6 -mt-16 pb-24 relative z-20">
         <div className="flex flex-col gap-6">
-          {loading && (
+          {/* Loading State (Initial Load Only) */}
+          {isLoading && (
             <div className="bg-white p-12 rounded-[2.5rem] shadow-xl text-center flex flex-col items-center gap-4">
               <Loader2 className="animate-spin text-brand-green" size={40} />
               <p className="font-bold text-slate-400">
@@ -106,24 +107,37 @@ const LatestUpdates = () => {
             </div>
           )}
 
-          {error && (
-            <div className="flex items-center justify-between bg-amber-50 border border-amber-100 p-4 rounded-2xl mb-4">
+          {/* Error Banner - Shows retry button */}
+          {isError && (
+            <div className="flex items-center justify-between bg-amber-50 border border-amber-100 p-4 rounded-2xl mb-4 animate-in fade-in slide-in-from-top-2">
               <div className="flex items-center gap-3 text-amber-700 font-bold text-sm">
-                <WifiOff size={18} /> {error}
+                <WifiOff size={18} />
+                <span>Connection failed. Showing archived updates.</span>
               </div>
               <button
-                onClick={() => fetchUpdates()}
-                className="text-amber-700 hover:rotate-180 transition-transform duration-500"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className={`text-amber-700 transition-all duration-500 p-2 hover:bg-amber-100 rounded-full ${
+                  isFetching ? "animate-spin opacity-50" : "hover:rotate-180"
+                }`}
               >
                 <RefreshCcw size={18} />
               </button>
             </div>
           )}
 
-          {!loading &&
-            updates.map((update) => (
+          {/* Updates List */}
+          {!isLoading &&
+            displayUpdates?.map((update) => (
               <UpdateCard key={update.id} update={update} />
             ))}
+
+          {/* Empty State Safety Check */}
+          {!isLoading && !isError && displayUpdates?.length === 0 && (
+            <div className="text-center p-10 text-slate-400 font-bold">
+              No updates found.
+            </div>
+          )}
         </div>
       </section>
     </div>

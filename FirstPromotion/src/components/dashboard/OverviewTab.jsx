@@ -1,24 +1,25 @@
 import React from "react";
+import { useNavigate } from "react-router-dom"; // 1. Import navigation hook
 import {
-  Clock,
-  Trophy,
-  PlayCircle,
   AlertTriangle,
-  BookOpen,
   Calendar,
-  ChevronRight,
-  CheckCircle2,
   AlertCircle,
   Zap,
   ArrowRight,
 } from "lucide-react";
+
+// Sub-components
 import PomodoroTimer from "./PomodoroTimer";
+import ContinueLearningCard from "./ContinueLearningCard"; // Ensure this component exists
 
 const OverviewTab = ({ user, setActiveTab }) => {
-  // --- DATA & LOGIC ---
+  const navigate = useNavigate(); // 2. Initialize hook
+
+  // --- MOCK DATA ---
   const firstName = user?.name?.split(" ")[0] || "Aspirant";
 
   const activeCourse = {
+    id: 101,
     title: "Postal Manual Vol V",
     lastTopic: "PO Guide Part 1: Clause 10",
     progress: 35,
@@ -52,7 +53,16 @@ const OverviewTab = ({ user, setActiveTab }) => {
     { id: 4, topic: "RTI Act 2005", category: "Law", lastStudiedDaysAgo: 14 },
   ];
 
-  // Helper: Calculate Due Date
+  // --- HANDLERS ---
+
+  // Logic to handle the "Resume Learning" button click
+  const handleResumeLearning = () => {
+    // Navigate to the specific course player or demo page
+    // In a real app, you might use: `/classroom/${activeCourse.id}`
+    navigate("/demo");
+  };
+
+  // Helper: Calculate Due Date for Revision
   const getRevisionDetails = (daysAgo) => {
     const intervals = [1, 3, 7, 14, 30];
     const isDue = intervals.includes(daysAgo);
@@ -153,40 +163,18 @@ const OverviewTab = ({ user, setActiveTab }) => {
 
       {/* 2. MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-        {/* COL 1: CONTINUE LEARNING */}
-        <div className="bg-brand-navy rounded-[2rem] p-6 text-white relative overflow-hidden shadow-xl flex flex-col justify-between group min-h-[220px]">
-          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
-            <BookOpen size={150} />
-          </div>
-
-          <div className="relative z-10">
-            <div className="flex justify-between items-start mb-4">
-              <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10">
-                Continue Learning
-              </span>
-              <div className="w-8 h-8 rounded-full bg-brand-green flex items-center justify-center font-bold text-xs shadow-lg">
-                {activeCourse.progress}%
-              </div>
-            </div>
-
-            <h2
-              className="text-xl font-black mb-1 line-clamp-2 leading-tight"
-              title={activeCourse.title}
-            >
-              {activeCourse.title}
-            </h2>
-            <p className="text-slate-300 text-xs font-medium mb-6 line-clamp-1">
-              {activeCourse.lastTopic}
-            </p>
-
-            <button className="w-full flex items-center justify-center gap-2 bg-brand-green hover:bg-emerald-400 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-brand-green/20">
-              <PlayCircle size={18} /> Resume
-            </button>
-          </div>
+        {/* COL 1: CONTINUE LEARNING (New Card) */}
+        <div className="lg:col-span-1">
+          <ContinueLearningCard
+            course={activeCourse}
+            onResume={handleResumeLearning}
+          />
         </div>
 
         {/* COL 2: POMODORO TIMER */}
-        <PomodoroTimer />
+        <div className="lg:col-span-1">
+          <PomodoroTimer />
+        </div>
 
         {/* COL 3: WEAK AREAS */}
         <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex flex-col">
@@ -214,13 +202,10 @@ const OverviewTab = ({ user, setActiveTab }) => {
               </div>
             ))}
           </div>
-          <button className="w-full mt-6 py-2.5 text-[10px] font-bold text-slate-400 hover:text-brand-navy border border-dashed border-slate-200 rounded-xl hover:border-brand-navy transition-all">
-            Take Quiz
-          </button>
         </div>
       </div>
 
-      {/* 3. SMART REVISION SCHEDULE (RESPONSIVE) */}
+      {/* 3. SMART REVISION SCHEDULE */}
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-6 pb-4 flex justify-between items-center border-b border-slate-50">
           <div className="flex items-center gap-3">
