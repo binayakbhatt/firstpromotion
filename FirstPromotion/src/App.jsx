@@ -29,6 +29,7 @@ const LatestUpdates = lazy(() => import("./pages/LatestUpdates"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const ResultPage = lazy(() => import("./pages/ResultPage"));
 
 /**
  * ScrollToTop Helper
@@ -108,6 +109,15 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <QuizPage />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Result Route */}
+                <Route
+                  path="/result"
+                  element={
+                    <ProtectedRoute>
+                      <ResultPage />
                     </ProtectedRoute>
                   }
                 />
