@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // server: {
-  //   allowedHosts: ["stages-ftp-river-laboratories.trycloudflare.com"],
-  // },
+  server: {
+    allowedHosts: true,
+  },
 });

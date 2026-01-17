@@ -17,26 +17,26 @@ import { Star, Quote, UserCircle } from "lucide-react";
 const TESTIMONIALS_DATA = [
   {
     id: 1,
-    name: "Sandeep Yadav",
-    role: "Postal Assistant (Selected 2024)",
+    name: "Rajesh Kumar",
+    role: "GDS (BPM) - Bihar Circle",
     quote:
-      "As a GDS in a rural branch, I had no guidance. FirstPromotion's mobile-friendly lectures allowed me to study during my lunch breaks effectively.",
+      "I used to forget PO Guide rules within a week. The 'Smart Revision' feature is a game changer—it actually reminds me of specific clauses just before I forget them. It feels like having a personal tutor.",
     rating: 5,
   },
   {
     id: 2,
-    name: "Anjali Deshmukh",
-    role: "Inspector of Posts (Qualified)",
+    name: "Priya Sharma",
+    role: "MTS Aspirant - Delhi Circle",
     quote:
-      "The IPO exam is tough, but the faculty here breaks down complex Postal Manuals into simple, easy-to-remember points and mnemonics.",
+      "The 'Weak Area' analysis on the dashboard opened my eyes. I thought I was good at Math, but the AI showed I was losing marks in Time & Work. I fixed it in 2 days using the suggested videos.",
     rating: 5,
   },
   {
     id: 3,
-    name: "Vikram Meena",
-    role: "MTS to Postman (Rank 1)",
+    name: "Amit Singh",
+    role: "Postman - UP Circle",
     quote:
-      "The mock tests are exactly like the real exam. I wasn't nervous during the paper because I had already practiced extensively on this platform.",
+      "Finally, a professional platform for us! The topic-wise MCQs are excellent—much harder and deeper than standard books. The interface is so clean, I actually enjoy studying after my duty.",
     rating: 5,
   },
 ];

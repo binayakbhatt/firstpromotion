@@ -20,26 +20,27 @@ export const APP_CONFIG = {
 
 /**
  * FAQ Data for Frequently Asked Questions section
+ * Focused on: Time Management, Tech Simplicity, and Smart Features.
  */
 export const FAQ_DATA = [
   {
-    question: "When does the 2026 Batch officially start?",
+    question: "I have a heavy duty schedule. Can I manage this course?",
     answer:
-      "The next batch starts on Jan 15th, 2026. However, you get instant access to the previous year's recorded sessions as soon as you enroll.",
+      "Absolutely. We designed this for working staff. Our '15-Minute Sprint' mode lets you complete daily lessons during your tea breaks or commute, without needing long leave.",
   },
   {
-    question: "Will I get PDF notes for all subjects?",
+    question: "I am not very tech-savvy. Is the Dashboard hard to use?",
     answer:
-      "Yes! Every lecture is accompanied by high-quality, printable PDF notes and 100+ practice MCQs based on the latest India Post pattern.",
+      "Not at all. If you can use WhatsApp, you can use FirstPromotion. The dashboard automatically shows you the 'Next Lesson' to study, so you don't have to search for anything.",
   },
   {
-    question: "What if I miss a Live Class?",
+    question: "What is 'Smart Revision' and how does it help me?",
     answer:
-      "Don't worry! All live sessions are recorded and uploaded to your student dashboard within 2 hours. You can watch them anytime, anywhere.",
+      "It is our unique feature that tracks what you learn. It reminds you to revise specific PO Rules exactly when you are about to forget them, ensuring 100% retention for the exam.",
   },
   {
-    question: "Is this course valid for the IPO (Inspector of Posts) exam?",
+    question: "Do I need to buy separate books for PO Guide Part 1?",
     answer:
-      "This specific batch covers PA/SA and Postman/MTS. We have a separate dedicated module for the Inspector of Posts exam which includes Paper 1-4.",
+      "No books are required. You get printable PDF notes, Previous Year Questions (PYQ), and AI-generated mock tests that cover the entire Departmental syllabus in depth.",
   },
 ];
