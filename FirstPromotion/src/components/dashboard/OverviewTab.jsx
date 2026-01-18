@@ -1,19 +1,20 @@
 import React from "react";
-import { useNavigate } from "react-router-dom"; // 1. Import navigation hook
+import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   Calendar,
   AlertCircle,
   Zap,
+  Clock,
   ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  TrendingUp,
 } from "lucide-react";
+import ContinueLearningCard from "./ContinueLearningCard";
 
-// Sub-components
-import PomodoroTimer from "./PomodoroTimer";
-import ContinueLearningCard from "./ContinueLearningCard"; // Ensure this component exists
-
-const OverviewTab = ({ user, setActiveTab }) => {
-  const navigate = useNavigate(); // 2. Initialize hook
+const OverviewTab = ({ user, onOpenTimer }) => {
+  const navigate = useNavigate();
 
   // --- MOCK DATA ---
   const firstName = user?.name?.split(" ")[0] || "Aspirant";
@@ -51,51 +52,46 @@ const OverviewTab = ({ user, setActiveTab }) => {
       lastStudiedDaysAgo: 6,
     },
     { id: 4, topic: "RTI Act 2005", category: "Law", lastStudiedDaysAgo: 14 },
+    {
+      id: 5,
+      topic: "PNOP Guidelines",
+      category: "Operations",
+      lastStudiedDaysAgo: 30,
+    },
   ];
 
-  // --- HANDLERS ---
-
-  // Logic to handle the "Resume Learning" button click
+  // --- LOGIC ---
   const handleResumeLearning = () => {
-    // Navigate to the specific course player or demo page
-    // In a real app, you might use: `/classroom/${activeCourse.id}`
     navigate("/demo");
   };
 
-  // Helper: Calculate Due Date for Revision
   const getRevisionDetails = (daysAgo) => {
+    // Spaced Repetition Logic: 1, 3, 7, 14, 30 days
     const intervals = [1, 3, 7, 14, 30];
-    const isDue = intervals.includes(daysAgo);
+    const isDue = intervals.includes(daysAgo) || daysAgo > 30;
 
-    // Calculate Next Date
     const today = new Date();
-    let nextReviewDays = 0;
-
-    if (isDue) {
-      nextReviewDays = 0;
-    } else {
-      const nextInterval = intervals.find((i) => i > daysAgo) || 30;
-      nextReviewDays = nextInterval - daysAgo;
-    }
+    // Find next interval
+    const nextInterval = intervals.find((i) => i > daysAgo) || 30;
+    const daysUntilNext = isDue ? 0 : nextInterval - daysAgo;
 
     const nextDate = new Date(today);
-    nextDate.setDate(today.getDate() + nextReviewDays);
+    nextDate.setDate(today.getDate() + daysUntilNext);
 
     return {
       due: isDue,
       label: isDue
         ? "Today"
-        : nextDate.toLocaleDateString("en-US", {
+        : nextDate.toLocaleDateString("en-IN", {
             month: "short",
             day: "numeric",
           }),
-      daysLeft: nextReviewDays,
+      daysLeft: daysUntilNext,
     };
   };
 
-  // Filter topics due TODAY for the greeting message
   const dueTopics = revisionTopics.filter(
-    (t) => getRevisionDetails(t.lastStudiedDaysAgo).due
+    (t) => getRevisionDetails(t.lastStudiedDaysAgo).due,
   );
   const dueTopicNames =
     dueTopics.length > 0
@@ -104,7 +100,7 @@ const OverviewTab = ({ user, setActiveTab }) => {
 
   return (
     <div className="space-y-6 md:space-y-8 pb-20">
-      {/* 1. GREETING & HEADER */}
+      {/* 1. HEADER & STATS */}
       <header className="bg-white p-5 md:p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
         <div className="w-full">
           <h1 className="text-2xl font-black text-brand-navy flex items-center gap-2 mb-2">
@@ -113,9 +109,7 @@ const OverviewTab = ({ user, setActiveTab }) => {
           <p className="text-slate-500 font-medium text-sm leading-relaxed flex items-start gap-2">
             <AlertCircle
               size={16}
-              className={`shrink-0 mt-0.5 ${
-                dueTopics.length > 0 ? "text-red-500" : "text-green-500"
-              }`}
+              className={`shrink-0 mt-0.5 ${dueTopics.length > 0 ? "text-red-500" : "text-green-500"}`}
             />
             <span>
               Your topics to revise today:{" "}
@@ -126,33 +120,29 @@ const OverviewTab = ({ user, setActiveTab }) => {
           </p>
         </div>
 
-        {/* Quick Stats Grid - Optimized for Mobile visibility */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-2 w-full xl:w-auto">
-          {/* Total Time */}
-          <div className="px-2 py-3 md:px-5 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-slate-100 transition-colors">
-            <span className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 mb-1 text-center whitespace-nowrap">
-              Total Hours
+          <div className="px-2 py-3 md:px-5 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-slate-100 transition-colors hover:border-slate-200">
+            <span className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 mb-1 flex items-center gap-1">
+              <Clock size={10} /> Total Hours
             </span>
             <span className="font-black text-brand-navy text-base md:text-lg leading-none">
               42h 15m
             </span>
           </div>
 
-          {/* Percentile */}
-          <div className="px-2 py-3 md:px-5 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-slate-100 transition-colors">
-            <span className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 mb-1 text-center whitespace-nowrap">
-              Percentile
+          <div className="px-2 py-3 md:px-5 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-slate-100 transition-colors hover:border-slate-200">
+            <span className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 mb-1 flex items-center gap-1">
+              <TrendingUp size={10} /> Percentile
             </span>
             <span className="font-black text-brand-green text-base md:text-lg leading-none">
               Top 5%
             </span>
           </div>
 
-          {/* Streak */}
           <div className="px-2 py-3 md:px-5 bg-orange-50 rounded-xl flex flex-col items-center justify-center border border-orange-100 shadow-sm">
-            <span className="text-[9px] md:text-[10px] font-black uppercase text-orange-400 mb-1 flex items-center gap-1 text-center whitespace-nowrap">
-              <Zap size={10} fill="currentColor" className="hidden sm:block" />{" "}
-              Streak
+            <span className="text-[9px] md:text-[10px] font-black uppercase text-orange-400 mb-1 flex items-center gap-1">
+              <Zap size={10} fill="currentColor" /> Streak
             </span>
             <span className="font-black text-orange-600 text-base md:text-lg leading-none">
               12 Days
@@ -163,41 +153,79 @@ const OverviewTab = ({ user, setActiveTab }) => {
 
       {/* 2. MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-        {/* COL 1: CONTINUE LEARNING (New Card) */}
-        <div className="lg:col-span-1">
+        {/* COL 1: CONTINUE LEARNING (Spans 2 cols) */}
+        <div className="lg:col-span-2">
           <ContinueLearningCard
             course={activeCourse}
             onResume={handleResumeLearning}
           />
         </div>
 
-        {/* COL 2: POMODORO TIMER */}
-        <div className="lg:col-span-1">
-          <PomodoroTimer />
+        {/* COL 2: TIMER LAUNCH PAD (Spans 1 col) */}
+        <div className="lg:col-span-1 bg-brand-navy rounded-[2rem] p-6 text-white relative overflow-hidden flex flex-col justify-center items-start shadow-xl border border-brand-navy">
+          {/* Decorative Elements */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-brand-green/20 rounded-full blur-2xl -ml-5 -mb-5"></div>
+
+          <div className="relative z-10 w-full">
+            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm border border-white/10">
+              <Clock className="text-brand-green" size={24} />
+            </div>
+
+            <h3 className="text-xl font-black mb-2 tracking-tight">
+              Study Session
+            </h3>
+            <p className="text-sm text-slate-300 mb-6 font-medium leading-relaxed">
+              Boost your retention with the Pomodoro technique. Track your focus
+              time now.
+            </p>
+
+            <button
+              onClick={onOpenTimer}
+              className="w-full sm:w-auto bg-brand-green text-white px-6 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white hover:text-brand-navy transition-all shadow-lg shadow-brand-green/20 flex items-center justify-center gap-2"
+            >
+              Launch Timer <ArrowRight size={14} />
+            </button>
+          </div>
         </div>
 
-        {/* COL 3: WEAK AREAS */}
-        <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex flex-col">
-          <div className="flex items-center gap-2 mb-4">
+        {/* ROW 2: WEAK AREAS (Spans full width) */}
+        <div className="lg:col-span-3 bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex flex-col">
+          <div className="flex items-center gap-2 mb-6">
             <div className="p-2 bg-red-50 text-red-500 rounded-lg">
-              <AlertTriangle size={16} />
+              <AlertTriangle size={18} />
             </div>
-            <h3 className="font-black text-brand-navy text-sm">Weak Areas</h3>
+            <div>
+              <h3 className="font-black text-brand-navy text-sm uppercase tracking-wide">
+                Focus Needed
+              </h3>
+              <p className="text-[10px] text-slate-400 font-bold">
+                Based on recent quiz performance
+              </p>
+            </div>
           </div>
-          <div className="space-y-4 flex-1">
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {weakAreas.map((area, idx) => (
-              <div key={idx} className="group">
-                <div className="flex justify-between text-[10px] font-bold mb-1.5">
-                  <span className="text-slate-600 truncate mr-2">
+              <div key={idx} className="group cursor-default">
+                <div className="flex justify-between text-xs font-bold mb-2">
+                  <span className="text-slate-600 truncate mr-2 group-hover:text-brand-navy transition-colors">
                     {area.topic}
                   </span>
-                  <span className="text-red-500 shrink-0">{area.accuracy}</span>
+                  <span className="text-red-500 shrink-0 bg-red-50 px-2 py-0.5 rounded text-[10px]">
+                    {area.accuracy} Accuracy
+                  </span>
                 </div>
-                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-red-400 transition-all duration-1000"
+                    className="h-full bg-red-400 rounded-full transition-all duration-1000 ease-out group-hover:bg-red-500"
                     style={{ width: area.accuracy }}
                   ></div>
+                </div>
+                <div className="mt-2 text-right">
+                  <button className="text-[10px] font-bold text-brand-navy hover:text-brand-green transition-colors flex items-center justify-end gap-1 w-full">
+                    Practice <ArrowRight size={10} />
+                  </button>
                 </div>
               </div>
             ))}
@@ -207,70 +235,26 @@ const OverviewTab = ({ user, setActiveTab }) => {
 
       {/* 3. SMART REVISION SCHEDULE */}
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-6 pb-4 flex justify-between items-center border-b border-slate-50">
+        <div className="p-6 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-50">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
-              <Calendar size={20} />
+            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+              <Calendar size={22} />
             </div>
             <div>
               <h3 className="text-lg font-black text-brand-navy">
                 Smart Revision
               </h3>
-              <p className="text-xs text-slate-400 font-medium hidden sm:block">
-                Topics for revision
+              <p className="text-xs text-slate-400 font-medium">
+                Spaced repetition schedule
               </p>
             </div>
           </div>
+          <button className="text-xs font-bold text-brand-navy hover:text-brand-green transition-colors bg-slate-50 px-4 py-2 rounded-lg">
+            View Calendar
+          </button>
         </div>
 
-        {/* --- MOBILE VIEW: CARDS (< md) --- */}
-        <div className="block md:hidden p-4 space-y-4">
-          {revisionTopics.map((item) => {
-            const details = getRevisionDetails(item.lastStudiedDaysAgo);
-            return (
-              <div
-                key={item.id}
-                className="bg-slate-50 rounded-2xl p-5 border border-slate-100"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <span className="px-2 py-1 bg-white border border-slate-200 text-slate-500 rounded-md text-[10px] font-bold uppercase tracking-wider">
-                    {item.category}
-                  </span>
-                  {details.due ? (
-                    <span className="flex items-center gap-1 text-red-500 font-bold text-xs bg-red-50 px-2 py-1 rounded-lg">
-                      <AlertCircle size={12} /> Due Today
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-slate-400 font-bold text-xs">
-                      <Calendar size={12} /> {details.label}
-                    </span>
-                  )}
-                </div>
-
-                <h4 className="font-bold text-brand-navy text-lg mb-1 leading-tight">
-                  {item.topic}
-                </h4>
-                <p className="text-xs text-slate-400 mb-5">
-                  Last studied: {item.lastStudiedDaysAgo} days ago
-                </p>
-
-                <button
-                  disabled={!details.due}
-                  className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                    details.due
-                      ? "bg-brand-navy text-white shadow-lg shadow-brand-navy/20 active:scale-95"
-                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  }`}
-                >
-                  {details.due ? "Revise Now" : "Locked"}{" "}
-                  <ArrowRight size={14} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* --- DESKTOP VIEW: TABLE (>= md) --- */}
+        {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -278,7 +262,7 @@ const OverviewTab = ({ user, setActiveTab }) => {
                 <th className="px-6 py-4 font-black">Topic Name</th>
                 <th className="px-6 py-4 font-black">Category</th>
                 <th className="px-6 py-4 font-black">Last Studied</th>
-                <th className="px-6 py-4 font-black">Next Revision</th>
+                <th className="px-6 py-4 font-black">Status</th>
                 <th className="px-6 py-4 font-black text-right">Action</th>
               </tr>
             </thead>
@@ -288,13 +272,13 @@ const OverviewTab = ({ user, setActiveTab }) => {
                 return (
                   <tr
                     key={item.id}
-                    className="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"
+                    className="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 group"
                   >
-                    <td className="px-6 py-4 font-bold text-brand-navy">
+                    <td className="px-6 py-4 font-bold text-brand-navy group-hover:text-brand-green transition-colors">
                       {item.topic}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded-md text-[10px] font-bold uppercase">
+                      <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-md text-[10px] font-bold uppercase tracking-wider">
                         {item.category}
                       </span>
                     </td>
@@ -303,25 +287,25 @@ const OverviewTab = ({ user, setActiveTab }) => {
                     </td>
                     <td className="px-6 py-4">
                       {details.due ? (
-                        <span className="inline-flex items-center gap-1.5 text-red-500 font-bold bg-red-50 px-3 py-1 rounded-full text-xs">
+                        <span className="inline-flex items-center gap-1.5 text-red-500 font-bold text-xs bg-red-50 px-2 py-1 rounded-full">
                           <AlertCircle size={12} /> Today
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 text-slate-400 font-bold bg-slate-100 px-3 py-1 rounded-full text-xs">
-                          <Calendar size={12} /> {details.label}
+                        <span className="inline-flex items-center gap-1.5 text-slate-400 font-bold text-xs">
+                          <CheckCircle2 size={12} /> {details.label}
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
                         disabled={!details.due}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                        className={`text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-all ${
                           details.due
-                            ? "bg-brand-navy text-white hover:bg-slate-800 shadow-md hover:shadow-lg"
+                            ? "bg-brand-navy text-white hover:bg-brand-green shadow-md hover:shadow-lg"
                             : "bg-slate-100 text-slate-300 cursor-not-allowed"
                         }`}
                       >
-                        {details.due ? "Revise Now" : "Locked"}
+                        Revise
                       </button>
                     </td>
                   </tr>
@@ -329,6 +313,63 @@ const OverviewTab = ({ user, setActiveTab }) => {
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden">
+          {revisionTopics.map((item) => {
+            const details = getRevisionDetails(item.lastStudiedDaysAgo);
+            return (
+              <div
+                key={item.id}
+                className="p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-bold text-brand-navy text-sm">
+                    {item.topic}
+                  </h4>
+                  {details.due ? (
+                    <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-black uppercase text-red-500 bg-red-50 px-2 py-1 rounded">
+                      Due Now
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-[10px] font-bold text-slate-400">
+                      {details.label}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase">
+                    {item.category}
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    • {item.lastStudiedDaysAgo}d ago
+                  </span>
+                </div>
+                <button
+                  disabled={!details.due}
+                  className={`w-full py-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 ${
+                    details.due
+                      ? "bg-brand-navy text-white"
+                      : "bg-slate-100 text-slate-300"
+                  }`}
+                >
+                  {details.due ? (
+                    <>
+                      <BookOpen size={14} /> Start Revision
+                    </>
+                  ) : (
+                    "Up to Date"
+                  )}
+                </button>
+              </div>
+            );
+          })}
+          <div className="p-4 text-center">
+            <button className="text-xs font-bold text-brand-navy hover:underline">
+              View Full Schedule
+            </button>
+          </div>
         </div>
       </div>
     </div>

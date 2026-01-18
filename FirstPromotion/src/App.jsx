@@ -30,6 +30,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ResultPage = lazy(() => import("./pages/ResultPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 
 /**
  * ScrollToTop Helper
@@ -92,6 +93,10 @@ const App = () => {
                 {/* --- Auth Routes --- */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route
+                  path="/forgot-password"
+                  element={<ForgotPasswordPage />}
+                />
 
                 {/* --- PROTECTED ROUTES --- */}
                 <Route

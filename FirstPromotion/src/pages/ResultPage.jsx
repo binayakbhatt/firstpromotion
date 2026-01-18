@@ -51,31 +51,19 @@ const ResultPage = () => {
 
   // 3. Handlers
   const handleRetry = () => {
-    // Navigate back to the quiz.
-    // Note: In a real app, you might pass the same topicID if available in state
-    navigate(-1);
+    if (state?.topicId) {
+      navigate(`/quiz/${state.topicId}?level=${state.level || "moderate"}`, {
+        replace: true,
+      });
+    } else {
+      // Fallback only if data is corrupted/missing
+      console.warn("Retry failed: Missing topicId in result state");
+      navigate("/dashboard", { state: { activeTab: "courses" } });
+    }
   };
 
   const handleHome = () => {
     navigate("/dashboard", { state: { activeTab: "overview" } });
-  };
-
-  const handleShare = () => {
-    // Generate a shareable text snippet
-    const text = `I just scored ${score}/${maxScore} (${percentage}%) in the FirstPromotion Mock Test! 🎯 #IndiaPost #DepartmentalExam`;
-
-    if (navigator.share) {
-      navigator
-        .share({
-          title: "FirstPromotion Result",
-          text: text,
-          url: window.location.href,
-        })
-        .catch(console.error);
-    } else {
-      navigator.clipboard.writeText(text);
-      toast.success("Result copied to clipboard!");
-    }
   };
 
   // Sound effect or analytics could go here in useEffect
@@ -141,11 +129,7 @@ const ResultPage = () => {
       </main>
 
       {/* --- FOOTER ACTIONS --- */}
-      <ActionFooter
-        onRetry={handleRetry}
-        onHome={handleHome}
-        onShare={handleShare}
-      />
+      <ActionFooter onRetry={handleRetry} onHome={handleHome} />
     </div>
   );
 };
