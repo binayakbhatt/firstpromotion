@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   Calendar,
@@ -10,13 +11,66 @@ import {
   BookOpen,
   CheckCircle2,
   TrendingUp,
+  CalendarClock, // New icon for Exam Timer
+  Sparkles, // New icon for motivation
+  Loader2,
 } from "lucide-react";
 import ContinueLearningCard from "./ContinueLearningCard";
 
-const OverviewTab = ({ user, onOpenTimer }) => {
+// --- MOCK API: FETCH EXAM SCHEDULE ---
+const fetchExamSchedule = async () => {
+  // Simulate network delay
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+
+  // Returns exam details (This would come from your DB)
+  return {
+    examName: "GDS to MTS 2026",
+    examDate: "2026-04-15T09:00:00", // Target Date
+    motivation:
+      "Success is the sum of small efforts repeated day in and day out.",
+  };
+};
+
+const OverviewTab = ({ user }) => {
   const navigate = useNavigate();
 
-  // --- MOCK DATA ---
+  // --- 1. NEW: TANSTACK QUERY FOR EXAM TIMER ---
+  const { data: examData, isLoading: loadingExam } = useQuery({
+    queryKey: ["examSchedule"],
+    queryFn: fetchExamSchedule,
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+    refetchOnWindowFocus: false,
+  });
+
+  // --- 2. COUNTDOWN LOGIC ---
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0 });
+
+  useEffect(() => {
+    if (!examData?.examDate) return;
+
+    const calculateTime = () => {
+      const difference = +new Date(examData.examDate) - +new Date();
+      if (difference > 0) {
+        return {
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        };
+      }
+      return { days: 0, hours: 0 };
+    };
+
+    // Initial Set
+    setTimeLeft(calculateTime());
+
+    // Update every minute
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTime());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, [examData]);
+
+  // --- EXISTING MOCK DATA ---
   const firstName = user?.name?.split(" ")[0] || "Aspirant";
 
   const activeCourse = {
@@ -60,21 +114,17 @@ const OverviewTab = ({ user, onOpenTimer }) => {
     },
   ];
 
-  // --- LOGIC ---
+  // --- EXISTING LOGIC ---
   const handleResumeLearning = () => {
     navigate("/demo");
   };
 
   const getRevisionDetails = (daysAgo) => {
-    // Spaced Repetition Logic: 1, 3, 7, 14, 30 days
     const intervals = [1, 3, 7, 14, 30];
     const isDue = intervals.includes(daysAgo) || daysAgo > 30;
-
     const today = new Date();
-    // Find next interval
     const nextInterval = intervals.find((i) => i > daysAgo) || 30;
     const daysUntilNext = isDue ? 0 : nextInterval - daysAgo;
-
     const nextDate = new Date(today);
     nextDate.setDate(today.getDate() + daysUntilNext);
 
@@ -130,7 +180,6 @@ const OverviewTab = ({ user, onOpenTimer }) => {
               42h 15m
             </span>
           </div>
-
           <div className="px-2 py-3 md:px-5 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-slate-100 transition-colors hover:border-slate-200">
             <span className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 mb-1 flex items-center gap-1">
               <TrendingUp size={10} /> Percentile
@@ -139,7 +188,6 @@ const OverviewTab = ({ user, onOpenTimer }) => {
               Top 5%
             </span>
           </div>
-
           <div className="px-2 py-3 md:px-5 bg-orange-50 rounded-xl flex flex-col items-center justify-center border border-orange-100 shadow-sm">
             <span className="text-[9px] md:text-[10px] font-black uppercase text-orange-400 mb-1 flex items-center gap-1">
               <Zap size={10} fill="currentColor" /> Streak
@@ -161,32 +209,82 @@ const OverviewTab = ({ user, onOpenTimer }) => {
           />
         </div>
 
-        {/* COL 2: TIMER LAUNCH PAD (Spans 1 col) */}
-        <div className="lg:col-span-1 bg-brand-navy rounded-[2rem] p-6 text-white relative overflow-hidden flex flex-col justify-center items-start shadow-xl border border-brand-navy">
-          {/* Decorative Elements */}
+        {/* COL 2: EXAM COUNTDOWN (Replaces Pomodoro Timer) */}
+        <div className="lg:col-span-1 bg-brand-navy rounded-[2rem] p-6 text-white relative overflow-hidden flex flex-col justify-between shadow-xl border border-brand-navy min-h-[220px]">
+          {/* Background Decoration */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-brand-green/20 rounded-full blur-2xl -ml-5 -mb-5"></div>
 
-          <div className="relative z-10 w-full">
-            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm border border-white/10">
-              <Clock className="text-brand-green" size={24} />
+          {loadingExam ? (
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-white/50">
+              <Loader2 className="animate-spin" size={24} />
+              <span className="text-xs font-bold uppercase tracking-widest">
+                Syncing Schedule...
+              </span>
             </div>
+          ) : (
+            <div className="relative z-10 h-full flex flex-col">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <CalendarClock className="text-brand-green" size={18} />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-brand-green">
+                      Upcoming Exam
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-black leading-tight text-white">
+                    {examData?.examName}
+                  </h3>
+                </div>
+                <div className="text-right">
+                  <span className="block text-xs font-bold text-slate-300">
+                    Target Date
+                  </span>
+                  <span className="block text-sm font-bold text-white">
+                    {new Date(examData?.examDate).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </span>
+                </div>
+              </div>
 
-            <h3 className="text-xl font-black mb-2 tracking-tight">
-              Study Session
-            </h3>
-            <p className="text-sm text-slate-300 mb-6 font-medium leading-relaxed">
-              Boost your retention with the Pomodoro technique. Track your focus
-              time now.
-            </p>
+              {/* Countdown Digits */}
+              <div className="flex items-end gap-2 mb-6">
+                <div className="bg-white/10 rounded-2xl p-3 text-center min-w-[70px] backdrop-blur-sm border border-white/5">
+                  <span className="text-3xl font-black block leading-none text-white">
+                    {timeLeft.days}
+                  </span>
+                  <span className="text-[9px] uppercase font-bold text-slate-300 tracking-wider">
+                    Days Left
+                  </span>
+                </div>
+                <div className="text-2xl font-black text-brand-green pb-4">
+                  :
+                </div>
+                <div className="bg-white/10 rounded-2xl p-3 text-center min-w-[70px] backdrop-blur-sm border border-white/5">
+                  <span className="text-3xl font-black block leading-none text-white">
+                    {timeLeft.hours}
+                  </span>
+                  <span className="text-[9px] uppercase font-bold text-slate-300 tracking-wider">
+                    Hours
+                  </span>
+                </div>
+              </div>
 
-            <button
-              onClick={onOpenTimer}
-              className="w-full sm:w-auto bg-brand-green text-white px-6 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white hover:text-brand-navy transition-all shadow-lg shadow-brand-green/20 flex items-center justify-center gap-2"
-            >
-              Launch Timer <ArrowRight size={14} />
-            </button>
-          </div>
+              {/* Motivation Footer */}
+              <div className="mt-auto bg-brand-green/10 rounded-xl p-3 border border-brand-green/20">
+                <p className="text-xs font-medium text-blue-100 flex gap-2 leading-relaxed italic">
+                  <Sparkles
+                    size={14}
+                    className="text-brand-green shrink-0 mt-0.5"
+                  />
+                  "{examData?.motivation}"
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ROW 2: WEAK AREAS (Spans full width) */}

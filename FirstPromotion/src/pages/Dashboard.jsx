@@ -10,7 +10,6 @@ import {
   Bell,
   ChevronDown,
   LifeBuoy,
-  Timer, // Added Icon
 } from "lucide-react";
 
 // Sub-components
@@ -18,9 +17,9 @@ import OverviewTab from "../components/dashboard/OverviewTab";
 import CoursesTab from "../components/dashboard/CoursesTab";
 import SettingsTab from "../components/dashboard/SettingsTab";
 import SupportTab from "../components/dashboard/SupportTab";
-import PomodoroTimer from "../components/dashboard/PomodoroTimer"; // Imported
+// New Import
+import ExamCountdown from "../components/dashboard/ExamCountdown";
 
-// ... [Keep existing fetchNotifications and data structure unchanged] ...
 const fetchNotifications = async () => {
   await new Promise((resolve) => setTimeout(resolve, 1000));
   return { unreadCount: 3, items: [] };
@@ -34,8 +33,7 @@ const Dashboard = () => {
   );
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
-  // --- NEW STATE: Timer Visibility ---
-  const [showTimer, setShowTimer] = useState(false);
+  // NOTE: Removed 'showTimer' state as ExamCountdown manages its own visibility
 
   useEffect(() => {
     if (location.state?.activeTab) {
@@ -59,12 +57,11 @@ const Dashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
-        // NOTE: We pass showTimer setter to allow Overview to trigger it if needed
         return (
           <OverviewTab
             user={user}
             setActiveTab={setActiveTab}
-            onOpenTimer={() => setShowTimer(true)}
+            // Removed onOpenTimer prop
           />
         );
       case "courses":
@@ -80,9 +77,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans text-slate-800">
-      {/* ... [Sidebar Code Remains Exactly Same] ... */}
+      {/* ... [Sidebar Code] ... */}
       <aside className="hidden lg:flex flex-col w-64 bg-brand-navy text-white fixed h-full z-20 shadow-2xl">
-        {/* ... (Keep existing sidebar content) ... */}
         <div className="p-8">
           <h2 className="text-2xl font-black tracking-tighter">
             FirstPromotion
@@ -112,7 +108,7 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      {/* ... [Mobile Nav Remains Same] ... */}
+      {/* ... [Mobile Nav] ... */}
       <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 z-40 px-6 py-3 flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] safe-area-bottom">
         {navItems.map((item) => (
           <button
@@ -151,18 +147,7 @@ const Dashboard = () => {
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* --- TIMER TOGGLE BUTTON --- */}
-            <button
-              onClick={() => setShowTimer(!showTimer)}
-              className={`p-2 rounded-full transition-all border ${
-                showTimer
-                  ? "bg-brand-navy text-white border-brand-navy shadow-md"
-                  : "text-slate-400 hover:text-brand-navy border-transparent hover:bg-slate-50"
-              }`}
-              title="Toggle Focus Timer"
-            >
-              <Timer size={22} />
-            </button>
+            {/* Removed: Timer Toggle Button */}
 
             <button className="p-2 text-slate-400 hover:text-brand-navy transition-colors relative">
               <Bell size={22} />
@@ -171,7 +156,7 @@ const Dashboard = () => {
               )}
             </button>
 
-            {/* Profile Menu (Kept same) */}
+            {/* Profile Menu */}
             <div className="relative">
               <button
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
@@ -230,17 +215,9 @@ const Dashboard = () => {
           {renderContent()}
         </div>
 
-        {/* --- PERSISTENT FLOATING TIMER --- */}
-        {/* It stays mounted even if hidden to keep the timer running (logic inside component could check if active)
-            However, usually we want to see it if it's running. Here we render conditionally for cleaner DOM,
-            but if you need the timer to run in background while closed, you should use style={{ display: showTimer ? 'block' : 'none' }} instead.
-        */}
-        <div
-          className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50"
-          style={{ display: showTimer ? "block" : "none" }}
-        >
-          <PomodoroTimer onClose={() => setShowTimer(false)} />
-        </div>
+        {/* --- PERSISTENT EXAM COUNTDOWN --- */}
+        {/* Replaces the floating Pomodoro timer */}
+        <ExamCountdown />
       </main>
     </div>
   );
