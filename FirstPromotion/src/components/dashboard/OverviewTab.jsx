@@ -11,21 +11,18 @@ import {
   BookOpen,
   CheckCircle2,
   TrendingUp,
-  CalendarClock, // New icon for Exam Timer
-  Sparkles, // New icon for motivation
+  CalendarClock,
+  Sparkles,
   Loader2,
 } from "lucide-react";
 import ContinueLearningCard from "./ContinueLearningCard";
 
-// --- MOCK API: FETCH EXAM SCHEDULE ---
+// --- MOCK API ---
 const fetchExamSchedule = async () => {
-  // Simulate network delay
   await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  // Returns exam details (This would come from your DB)
   return {
     examName: "GDS to MTS 2026",
-    examDate: "2026-04-15T09:00:00", // Target Date
+    examDate: "2026-04-15T09:00:00",
     motivation:
       "Success is the sum of small efforts repeated day in and day out.",
   };
@@ -34,15 +31,15 @@ const fetchExamSchedule = async () => {
 const OverviewTab = ({ user }) => {
   const navigate = useNavigate();
 
-  // --- 1. NEW: TANSTACK QUERY FOR EXAM TIMER ---
+  // --- EXAM DATA FETCHING ---
   const { data: examData, isLoading: loadingExam } = useQuery({
     queryKey: ["examSchedule"],
     queryFn: fetchExamSchedule,
-    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+    staleTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
   });
 
-  // --- 2. COUNTDOWN LOGIC ---
+  // --- TIMER LOGIC ---
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0 });
 
   useEffect(() => {
@@ -59,33 +56,25 @@ const OverviewTab = ({ user }) => {
       return { days: 0, hours: 0 };
     };
 
-    // Initial Set
     setTimeLeft(calculateTime());
-
-    // Update every minute
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTime());
-    }, 60000);
+    const timer = setInterval(() => setTimeLeft(calculateTime()), 60000);
 
     return () => clearInterval(timer);
   }, [examData]);
 
-  // --- EXISTING MOCK DATA ---
+  // --- MOCK DATA ---
   const firstName = user?.name?.split(" ")[0] || "Aspirant";
-
   const activeCourse = {
     id: 101,
     title: "Postal Manual Vol V",
     lastTopic: "PO Guide Part 1: Clause 10",
     progress: 35,
   };
-
   const weakAreas = [
     { topic: "Product & Services", accuracy: "42%" },
     { topic: "IT Modernization", accuracy: "55%" },
     { topic: "Mail Operations", accuracy: "61%" },
   ];
-
   const revisionTopics = [
     {
       id: 1,
@@ -114,10 +103,7 @@ const OverviewTab = ({ user }) => {
     },
   ];
 
-  // --- EXISTING LOGIC ---
-  const handleResumeLearning = () => {
-    navigate("/demo");
-  };
+  const handleResumeLearning = () => navigate("/demo");
 
   const getRevisionDetails = (daysAgo) => {
     const intervals = [1, 3, 7, 14, 30];
@@ -127,7 +113,6 @@ const OverviewTab = ({ user }) => {
     const daysUntilNext = isDue ? 0 : nextInterval - daysAgo;
     const nextDate = new Date(today);
     nextDate.setDate(today.getDate() + daysUntilNext);
-
     return {
       due: isDue,
       label: isDue
@@ -136,7 +121,6 @@ const OverviewTab = ({ user }) => {
             month: "short",
             day: "numeric",
           }),
-      daysLeft: daysUntilNext,
     };
   };
 
@@ -150,7 +134,7 @@ const OverviewTab = ({ user }) => {
 
   return (
     <div className="space-y-6 md:space-y-8 pb-20">
-      {/* 1. HEADER & STATS */}
+      {/* 1. HEADER */}
       <header className="bg-white p-5 md:p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
         <div className="w-full">
           <h1 className="text-2xl font-black text-brand-navy flex items-center gap-2 mb-2">
@@ -170,9 +154,8 @@ const OverviewTab = ({ user }) => {
           </p>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-2 w-full xl:w-auto">
-          <div className="px-2 py-3 md:px-5 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-slate-100 transition-colors hover:border-slate-200">
+          <div className="px-2 py-3 md:px-5 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-slate-100 transition-colors">
             <span className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 mb-1 flex items-center gap-1">
               <Clock size={10} /> Total Hours
             </span>
@@ -180,7 +163,7 @@ const OverviewTab = ({ user }) => {
               42h 15m
             </span>
           </div>
-          <div className="px-2 py-3 md:px-5 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-slate-100 transition-colors hover:border-slate-200">
+          <div className="px-2 py-3 md:px-5 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-slate-100 transition-colors">
             <span className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 mb-1 flex items-center gap-1">
               <TrendingUp size={10} /> Percentile
             </span>
@@ -201,7 +184,7 @@ const OverviewTab = ({ user }) => {
 
       {/* 2. MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-        {/* COL 1: CONTINUE LEARNING (Spans 2 cols) */}
+        {/* Course Card */}
         <div className="lg:col-span-2">
           <ContinueLearningCard
             course={activeCourse}
@@ -209,22 +192,17 @@ const OverviewTab = ({ user }) => {
           />
         </div>
 
-        {/* COL 2: EXAM COUNTDOWN (Replaces Pomodoro Timer) */}
+        {/* Exam Timer Card */}
         <div className="lg:col-span-1 bg-brand-navy rounded-[2rem] p-6 text-white relative overflow-hidden flex flex-col justify-between shadow-xl border border-brand-navy min-h-[220px]">
-          {/* Background Decoration */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-brand-green/20 rounded-full blur-2xl -ml-5 -mb-5"></div>
 
           {loadingExam ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-white/50">
               <Loader2 className="animate-spin" size={24} />
-              <span className="text-xs font-bold uppercase tracking-widest">
-                Syncing Schedule...
-              </span>
             </div>
           ) : (
             <div className="relative z-10 h-full flex flex-col">
-              {/* Header */}
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -249,8 +227,6 @@ const OverviewTab = ({ user }) => {
                   </span>
                 </div>
               </div>
-
-              {/* Countdown Digits */}
               <div className="flex items-end gap-2 mb-6">
                 <div className="bg-white/10 rounded-2xl p-3 text-center min-w-[70px] backdrop-blur-sm border border-white/5">
                   <span className="text-3xl font-black block leading-none text-white">
@@ -272,8 +248,6 @@ const OverviewTab = ({ user }) => {
                   </span>
                 </div>
               </div>
-
-              {/* Motivation Footer */}
               <div className="mt-auto bg-brand-green/10 rounded-xl p-3 border border-brand-green/20">
                 <p className="text-xs font-medium text-blue-100 flex gap-2 leading-relaxed italic">
                   <Sparkles
@@ -287,7 +261,7 @@ const OverviewTab = ({ user }) => {
           )}
         </div>
 
-        {/* ROW 2: WEAK AREAS (Spans full width) */}
+        {/* Weak Areas */}
         <div className="lg:col-span-3 bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex flex-col">
           <div className="flex items-center gap-2 mb-6">
             <div className="p-2 bg-red-50 text-red-500 rounded-lg">
@@ -302,7 +276,6 @@ const OverviewTab = ({ user }) => {
               </p>
             </div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {weakAreas.map((area, idx) => (
               <div key={idx} className="group cursor-default">
@@ -331,7 +304,7 @@ const OverviewTab = ({ user }) => {
         </div>
       </div>
 
-      {/* 3. SMART REVISION SCHEDULE */}
+      {/* 3. SMART REVISION */}
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-6 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-50">
           <div className="flex items-center gap-3">
@@ -352,7 +325,7 @@ const OverviewTab = ({ user }) => {
           </button>
         </div>
 
-        {/* Desktop Table View */}
+        {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -397,11 +370,7 @@ const OverviewTab = ({ user }) => {
                     <td className="px-6 py-4 text-right">
                       <button
                         disabled={!details.due}
-                        className={`text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-all ${
-                          details.due
-                            ? "bg-brand-navy text-white hover:bg-brand-green shadow-md hover:shadow-lg"
-                            : "bg-slate-100 text-slate-300 cursor-not-allowed"
-                        }`}
+                        className={`text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-all ${details.due ? "bg-brand-navy text-white hover:bg-brand-green shadow-md hover:shadow-lg" : "bg-slate-100 text-slate-300 cursor-not-allowed"}`}
                       >
                         Revise
                       </button>
@@ -413,7 +382,7 @@ const OverviewTab = ({ user }) => {
           </table>
         </div>
 
-        {/* Mobile Card View */}
+        {/* Mobile Cards */}
         <div className="md:hidden">
           {revisionTopics.map((item) => {
             const details = getRevisionDetails(item.lastStudiedDaysAgo);

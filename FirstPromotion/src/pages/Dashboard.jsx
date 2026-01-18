@@ -12,12 +12,10 @@ import {
   LifeBuoy,
 } from "lucide-react";
 
-// Sub-components
 import OverviewTab from "../components/dashboard/OverviewTab";
 import CoursesTab from "../components/dashboard/CoursesTab";
 import SettingsTab from "../components/dashboard/SettingsTab";
 import SupportTab from "../components/dashboard/SupportTab";
-// New Import
 import ExamCountdown from "../components/dashboard/ExamCountdown";
 
 const fetchNotifications = async () => {
@@ -32,8 +30,6 @@ const Dashboard = () => {
     location.state?.activeTab || "overview",
   );
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-
-  // NOTE: Removed 'showTimer' state as ExamCountdown manages its own visibility
 
   useEffect(() => {
     if (location.state?.activeTab) {
@@ -57,13 +53,7 @@ const Dashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
-        return (
-          <OverviewTab
-            user={user}
-            setActiveTab={setActiveTab}
-            // Removed onOpenTimer prop
-          />
-        );
+        return <OverviewTab user={user} setActiveTab={setActiveTab} />;
       case "courses":
         return <CoursesTab />;
       case "support":
@@ -77,7 +67,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans text-slate-800">
-      {/* ... [Sidebar Code] ... */}
+      {/* Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-brand-navy text-white fixed h-full z-20 shadow-2xl">
         <div className="p-8">
           <h2 className="text-2xl font-black tracking-tighter">
@@ -108,7 +98,7 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      {/* ... [Mobile Nav] ... */}
+      {/* Mobile Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 z-40 px-6 py-3 flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] safe-area-bottom">
         {navItems.map((item) => (
           <button
@@ -147,8 +137,6 @@ const Dashboard = () => {
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* Removed: Timer Toggle Button */}
-
             <button className="p-2 text-slate-400 hover:text-brand-navy transition-colors relative">
               <Bell size={22} />
               {!loadingNotifs && notifications?.unreadCount > 0 && (
@@ -156,7 +144,7 @@ const Dashboard = () => {
               )}
             </button>
 
-            {/* Profile Menu */}
+            {/* Profile Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
@@ -170,6 +158,7 @@ const Dashboard = () => {
                   className={`text-slate-400 transition-transform duration-200 ${isProfileMenuOpen ? "rotate-180" : ""}`}
                 />
               </button>
+
               {isProfileMenuOpen && (
                 <>
                   <div
@@ -215,8 +204,6 @@ const Dashboard = () => {
           {renderContent()}
         </div>
 
-        {/* --- PERSISTENT EXAM COUNTDOWN --- */}
-        {/* Replaces the floating Pomodoro timer */}
         <ExamCountdown />
       </main>
     </div>
