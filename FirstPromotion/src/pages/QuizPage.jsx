@@ -133,6 +133,8 @@ const useQuizEngine = (questions, topicId, level) => {
       skipped: skippedCount,
       level,
       date: new Date().toISOString(),
+      questions,
+      answers,
     };
 
     navigate("/result", { state: resultData, replace: true });

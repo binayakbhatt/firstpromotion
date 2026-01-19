@@ -4,9 +4,11 @@ import { Toaster, toast } from "react-hot-toast";
 import { Calendar, Award, BookOpen } from "lucide-react";
 
 // Components
+// Components
 import ScoreGauge from "../components/quiz/results/ScoreGauge";
 import PerformanceStats from "../components/quiz/results/PerformanceStats";
 import ActionFooter from "../components/quiz/results/ActionFooter";
+import DetailedAnalysis from "../components/quiz/results/DetailedAnalysis";
 
 const ResultPage = () => {
   const { state } = useLocation();
@@ -26,6 +28,8 @@ const ResultPage = () => {
     skipped,
     level,
     date,
+    questions,
+    answers,
   } = state;
 
   // 2. Derived Metrics
@@ -125,6 +129,9 @@ const ResultPage = () => {
               </p>
             </div>
           </div>
+          
+          {/* Detailed Analysis */}
+          <DetailedAnalysis questions={questions} answers={answers} />
         </div>
       </main>
 
